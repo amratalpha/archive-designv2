@@ -1,0 +1,13 @@
+{
+  "review_pages": 42,
+  "languages": [
+    "English",
+    "Arabic"
+  ],
+  "view_model_routes": 18,
+  "header_variants": 1,
+  "broken_local_resources": 0,
+  "unresolved_template_expressions": 0,
+  "visual_browser_verification": "Unavailable: local preview connection failed",
+  "brand_validation": "Supplied palette retained; requested Roboto and Noto Kufi Arabic fonts bundled offline"
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "home",
+    "title": "Dashboard",
+    "file": "screens/home.html"
+  },
+  {
+    "id": "capture",
+    "title": "Capture & drop-off",
+    "file": "screens/capture.html"
+  },
+  {
+    "id": "myfiles",
+    "title": "My files",
+    "file": "screens/myfiles.html"
+  },
+  {
+    "id": "approvals",
+    "title": "Approvals",
+    "file": "screens/approvals.html"
+  },
+  {
+    "id": "task",
+    "title": "Approval detail",
+    "file": "screens/task.html"
+  },
+  {
+    "id": "delegation",
+    "title": "Delegation",
+    "file": "screens/delegation.html"
+  },
+  {
+    "id": "search",
+    "title": "Search archive",
+    "file": "screens/search.html"
+  },
+  {
+    "id": "document",
+    "title": "Document detail",
+    "file": "screens/document.html"
+  },
+  {
+    "id": "share",
+    "title": "Share document",
+    "file": "screens/share.html"
+  },
+  {
+    "id": "policies",
+    "title": "Policies",
+    "file": "screens/policies.html"
+  },
+  {
+    "id": "contracts",
+    "title": "Contracts",
+    "file": "screens/contracts.html"
+  },
+  {
+    "id": "corr",
+    "title": "Correspondence",
+    "file": "screens/corr.html"
+  },
+  {
+    "id": "records",
+    "title": "Records & retention",
+    "file": "screens/records.html"
+  },
+  {
+    "id": "projects",
+    "title": "Projects",
+    "file": "screens/projects.html"
+  },
+  {
+    "id": "classify",
+    "title": "Classification",
+    "file": "screens/classify.html"
+  },
+  {
+    "id": "disposition",
+    "title": "Disposition",
+    "file": "screens/disposition.html"
+  },
+  {
+    "id": "holds",
+    "title": "Legal holds",
+    "file": "screens/holds.html"
+  },
+  {
+    "id": "reports",
+    "title": "Reports & insights",
+    "file": "screens/reports.html"
+  },
+  {
+    "id": "integration",
+    "title": "Integrations",
+    "file": "screens/integration.html"
+  },
+  {
+    "id": "admin",
+    "title": "Administration",
+    "file": "screens/admin.html"
+  },
+  {
+    "id": "settings",
+    "title": "My settings",
+    "file": "screens/settings.html"
+  }
+]

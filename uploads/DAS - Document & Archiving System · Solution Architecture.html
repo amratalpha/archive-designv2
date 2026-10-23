@@ -1,0 +1,1471 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>DAS — Document &amp; Archiving System · Solution Architecture</title>
+
+<style>
+:root{
+  --paper:#F5F6F4; --surface:#FFFFFF; --surface-2:#ECEEEA; --surface-3:#E1E5E0;
+  --ink:#131A18; --ink-2:#46514E; --ink-3:#6E7A76;
+  --line:#D3D8D3; --line-2:#BFC7C1;
+  --accent:#14625E; --accent-soft:#DCEBE8; --accent-line:#8FC0BA;
+  --brass:#8A6A2F; --brass-soft:#F0E7D4;
+  --c-open:#3F7D52; --c-sens:#A9761B; --c-conf:#B0522A; --c-secr:#8E2B39;
+  --font-display:Constantia,Cambria,"Palatino Linotype","Book Antiqua",Georgia,serif;
+  --font-body:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:Consolas,"Cascadia Mono","SF Mono",Menlo,"DejaVu Sans Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0E1413; --surface:#151D1B; --surface-2:#1D2725; --surface-3:#243230;
+    --ink:#E6ECE9; --ink-2:#A3B0AC; --ink-3:#7E8B87;
+    --line:#2A3634; --line-2:#3A4846;
+    --accent:#5CBDB2; --accent-soft:#16302D; --accent-line:#2E5C57;
+    --brass:#C9A24D; --brass-soft:#2B2417;
+    --c-open:#6FB683; --c-sens:#D9A441; --c-conf:#E08050; --c-secr:#E0697A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1413; --surface:#151D1B; --surface-2:#1D2725; --surface-3:#243230;
+  --ink:#E6ECE9; --ink-2:#A3B0AC; --ink-3:#7E8B87;
+  --line:#2A3634; --line-2:#3A4846;
+  --accent:#5CBDB2; --accent-soft:#16302D; --accent-line:#2E5C57;
+  --brass:#C9A24D; --brass-soft:#2B2417;
+  --c-open:#6FB683; --c-sens:#D9A441; --c-conf:#E08050; --c-secr:#E0697A;
+}
+:root[data-theme="light"]{
+  --paper:#F5F6F4; --surface:#FFFFFF; --surface-2:#ECEEEA; --surface-3:#E1E5E0;
+  --ink:#131A18; --ink-2:#46514E; --ink-3:#6E7A76;
+  --line:#D3D8D3; --line-2:#BFC7C1;
+  --accent:#14625E; --accent-soft:#DCEBE8; --accent-line:#8FC0BA;
+  --brass:#8A6A2F; --brass-soft:#F0E7D4;
+  --c-open:#3F7D52; --c-sens:#A9761B; --c-conf:#B0522A; --c-secr:#8E2B39;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:0 28px 120px}
+.col{max-width:74ch}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:2px solid var(--ink); padding:52px 0 0}
+.mast .kicker{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 18px
+}
+.mast h1{
+  font-family:var(--font-display); font-weight:600; font-size:clamp(34px,5.2vw,58px);
+  line-height:1.06; letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance;
+}
+.mast .sub{font-size:19px; color:var(--ink-2); max-width:66ch; margin:0 0 34px}
+.docctl{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:0; border-top:1px solid var(--line); margin-bottom:0;
+}
+.docctl div{padding:14px 18px 16px; border-right:1px solid var(--line)}
+.docctl div:last-child{border-right:0}
+.docctl dt{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 5px
+}
+.docctl dd{margin:0; font-family:var(--font-mono); font-size:13px; color:var(--ink)}
+
+/* ---------- sections ---------- */
+section{padding-top:64px}
+h2{
+  font-family:var(--font-display); font-weight:600; font-size:31px; line-height:1.15;
+  letter-spacing:-.01em; margin:0 0 10px; text-wrap:balance;
+}
+h2 .num{
+  display:block; font-family:var(--font-mono); font-size:11.5px; font-weight:400;
+  letter-spacing:.18em; color:var(--accent); margin-bottom:9px;
+}
+h3{
+  font-family:var(--font-display); font-weight:600; font-size:21px;
+  margin:38px 0 8px; letter-spacing:-.005em; text-wrap:balance;
+}
+h4{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  margin:28px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line);
+}
+p{margin:0 0 15px}
+.lede{font-size:17.5px; color:var(--ink-2)}
+a{color:var(--accent)}
+strong{font-weight:640; color:var(--ink)}
+code,.mono{font-family:var(--font-mono); font-size:.88em}
+code{background:var(--surface-2); padding:1px 5px; border-radius:2px}
+ul,ol{margin:0 0 15px; padding-left:22px}
+li{margin-bottom:7px}
+li::marker{color:var(--ink-3)}
+hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:16px 0 22px; border:1px solid var(--line); background:var(--surface)}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:14px}
+th,td{text-align:left; padding:9px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+thead th{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; background:var(--surface-2); white-space:nowrap;
+  border-bottom:1px solid var(--line-2);
+}
+tbody tr:last-child td{border-bottom:0}
+td.n,th.n{font-family:var(--font-mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td.c{font-family:var(--font-mono); font-size:12.5px; white-space:nowrap; color:var(--accent)}
+caption{caption-side:bottom; text-align:left; padding:10px 14px; font-size:13px; color:var(--ink-3); border-top:1px solid var(--line)}
+
+/* ---------- figures ---------- */
+figure{margin:30px 0 26px}
+.figbox{
+  border:1px solid var(--line); background:var(--surface);
+  padding:20px 20px 12px; overflow-x:auto;
+}
+figure svg{display:block; width:100%; min-width:900px; height:auto}
+figcaption{
+  margin-top:11px; font-size:13.5px; color:var(--ink-2); max-width:80ch;
+}
+figcaption b{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--accent); font-weight:600; margin-right:9px}
+.legend{display:flex; flex-wrap:wrap; gap:18px; margin-top:12px; font-size:12.5px; color:var(--ink-2)}
+.legend span{display:flex; align-items:center; gap:7px}
+.sw{display:block; width:11px; height:11px; border:1px solid var(--line-2); flex:none}
+.sw.native{background:var(--accent-soft); border-color:var(--accent-line)}
+.sw.custom{background:var(--brass-soft); border-color:var(--brass)}
+.sw.plat{background:var(--surface-2)}
+
+/* svg primitives */
+.zone{fill:none; stroke:var(--line-2); stroke-width:1; stroke-dasharray:4 4}
+.zonefill{fill:var(--surface-2); opacity:.42; stroke:none}
+.band{fill:var(--surface-2); stroke:var(--line); stroke-width:1}
+.box{fill:var(--surface); stroke:var(--line-2); stroke-width:1}
+.box.native{fill:var(--accent-soft); stroke:var(--accent-line)}
+.box.custom{fill:var(--brass-soft); stroke:var(--brass)}
+.box.hub{fill:var(--surface); stroke:var(--accent); stroke-width:1.6}
+.t{fill:var(--ink); font-family:var(--font-body); font-size:13px}
+.t.s{fill:var(--ink-3); font-family:var(--font-mono); font-size:11px}
+.t.b{font-weight:640}
+.t.big{font-family:var(--font-display); font-size:16px; font-weight:600}
+.lb{fill:var(--ink-3); font-family:var(--font-mono); font-size:11px; letter-spacing:.11em; text-transform:uppercase}
+.al{fill:var(--ink-2); font-family:var(--font-mono); font-size:11px}
+.al.em{fill:var(--accent)}
+.ln{stroke:var(--ink-3); stroke-width:1.3; fill:none}
+.ln.em{stroke:var(--accent); stroke-width:1.8}
+.ln.dash{stroke-dasharray:5 4}
+.ln.thin{stroke:var(--line-2); stroke-width:1}
+.code-seg{fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.3}
+.tick{fill:var(--accent)}
+.codebig{fill:var(--ink); font-family:var(--font-mono); font-size:24px; font-weight:600}
+
+/* ---------- callouts ---------- */
+.note{
+  border-left:3px solid var(--accent); background:var(--surface);
+  padding:14px 18px; margin:20px 0; font-size:14.5px; color:var(--ink-2);
+}
+.note b{color:var(--ink)}
+.note.warn{border-left-color:var(--brass)}
+.pill{
+  display:inline-block; font-family:var(--font-mono); font-size:10.5px;
+  letter-spacing:.08em; text-transform:uppercase; padding:2px 8px;
+  border:1px solid currentColor; border-radius:2px; vertical-align:1px;
+}
+.p-open{color:var(--c-open)} .p-sens{color:var(--c-sens)}
+.p-conf{color:var(--c-conf)} .p-secr{color:var(--c-secr)}
+
+/* ---------- checklist ---------- */
+.chk{list-style:none; padding:0; margin:12px 0 22px}
+.chk li{
+  display:grid; grid-template-columns:20px 1fr; gap:12px; align-items:start;
+  padding:9px 0; border-bottom:1px solid var(--line); margin:0;
+}
+.chk li:last-child{border-bottom:0}
+.chk li::before{
+  content:""; width:12px; height:12px; margin-top:5px;
+  border:1.4px solid var(--accent); display:block;
+}
+.chk .who{
+  display:block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-3); margin-top:3px;
+}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:0 42px}
+
+/* ---------- decision cards ---------- */
+.adr{border-top:1px solid var(--line); padding:20px 0}
+.adr:last-child{border-bottom:1px solid var(--line)}
+.adr h3{margin:0 0 6px; font-size:19px}
+.adr .tag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--brass); display:block; margin-bottom:7px;
+}
+.adr p{font-size:14.5px; color:var(--ink-2); max-width:80ch}
+.adr p b{color:var(--ink)}
+
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+@media (max-width:640px){
+  .wrap{padding:0 18px 80px}
+  .docctl div{border-right:0; border-bottom:1px solid var(--line)}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="kicker">Solution Architecture · Design Review Draft</p>
+  <h1>Document &amp; Archiving System on SharePoint Server Subscription Edition</h1>
+  <p class="sub">System and component design, data and application flows, and the prerequisite baseline required before build — derived from the RFP scope of services and the ten governing reference documents.</p>
+  <dl class="docctl">
+    <div><dt>Document No.</dt><dd>DAS-SA-ME-01</dd></div>
+    <div><dt>Version</dt><dd>1.0 · Draft</dd></div>
+    <div><dt>Date of Issue</dt><dd>10-08-2026</dd></div>
+    <div><dt>Client</dt><dd>XYZ (the Fund)</dd></div>
+    <div><dt>Classification</dt><dd>Confidential</dd></div>
+  </dl>
+</header>
+
+<section id="s01">
+  <h2><span class="num">§ 01 — Design Basis</span>What the reference set actually mandates</h2>
+  <div class="col">
+    <p class="lede">The RFP names the platform and the goals. The nine supporting documents name the <em>rules</em> — and those rules, not the feature list, are what constrain the architecture. Every design decision in this document traces to a row below.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Constraint that shapes the design</th><th>Consequence for the architecture</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>Fully on-premises hosting; the Fund supplies SharePoint and SQL Server licences</td><td>No cloud content services. Purview retention labels, sensitivity labels, cloud auto-classification and Power Automate are all unavailable — retention must be built on on-prem primitives.</td><td>RFP §Infrastructure, §Ownership</td></tr>
+      <tr><td>Functional classification with 3 levels (Function → Activity → Process), extensible to a 4th; categories exhaustive, mutually exclusive, independent</td><td>A Managed Metadata term set is the single source of truth for classification, not folder structure. Term set drives routing, retention and search refiners.</td><td>ARC-MA-003-01-AR, Art. 29–32</td></tr>
+      <tr><td>Unified coding: 7-part document code and a per-division record code</td><td>A custom Document ID provider must generate and reserve codes; sequence ownership sits with a named business unit, not the system.</td><td>Document &amp; Records Control Guide §6.2; Archiving Guide §7</td></tr>
+      <tr><td>Three-phase record life: current (جارية) → intermediate (وسيطة) → permanent or destruction</td><td>Three physical storage tiers with different durability, cost and mutability — not one repository with a status column.</td><td>Federal Law 7/2008 Exec. Reg., Ch. 7–8</td></tr>
+      <tr><td>A File Retention Plan approved by the National Archives, refreshed at least every 5 years</td><td>Retention rules are configuration data with an approval workflow and version history — not hard-coded policy.</td><td>Exec. Reg. Art. 34, 36, 39</td></tr>
+      <tr><td>Long-term preservation in <b>PDF/A</b> on <b>WORM</b> (non-rewritable) media, with an off-site copy</td><td>A rendition service at ingestion and an immutable storage tier at the bottom. SharePoint provides neither — both are procurement items.</td><td>NLA Electronic Documents &amp; Archives Mgmt</td></tr>
+      <tr><td>Mandated EDRMS functions: capture, metadata &amp; indexes, retention &amp; disposal, storage components, search &amp; display, permissions, migration, integration</td><td>Becomes the functional acceptance checklist; each maps to a named component in §02.</td><td>Exec. Reg. Art. 64</td></tr>
+      <tr><td>Four information classification levels: Open, Sensitive, Confidential, Secret — set by the business Information Owner</td><td>Classification is a required, non-blank metadata field that drives permissions, IRM protection, DLP rules and download/print controls.</td><td>Information Security Handbook §4, §20(a)</td></tr>
+      <tr><td><b>8 TB of existing content</b>, quoted in the RFP as ~70,000 documents, with metadata <em>and permissions</em> preserved; legacy file servers and outdated repositories in scope</td><td>Storage, migration duration and backup strategy are driven by the 8 TB, not by the document count — and the two figures do not reconcile (§07, §11).</td><td>RFP §Data Migration; Fund-confirmed volume</td></tr>
+      <tr><td>HA via SQL Server Always On; DR via Nutanix VM-level replication; RPO/RTO proven in a drill</td><td>Two replication mechanisms with different recovery points. Recovery order must be documented (see §07 and ADR-4).</td><td>RFP §Technical Architecture, §Acceptance</td></tr>
+      <tr><td>ISO 27001:2022 controls incl. DLP, data masking, information deletion, monitoring, secure coding; SIEM log integration</td><td>Audit stream, DLP policy set and secure-SDLC gates are in scope of the build, not of operations hand-over.</td><td>Information Security Handbook §26; RFP §Access Control</td></tr>
+      <tr><td>Bilingual delivery — user material and interface in Arabic and English</td><td>Arabic language pack, Arabic word-breaker and stemmer, RTL-aware branding, and bilingual term set labels on day one.</td><td>RFP §Expected Deliverables</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <b>The single largest scope risk in this RFP is invisible in the requirements list.</b> The document log supplied as reference 3 contains roughly 464 distinct record series across 11 sectors and 39 divisions, each with its own metadata set, coding stem, confidentiality level, active retention and archive retention. That register — not the 70,000 documents — is the real configuration surface of this system. It must be frozen and signed before build starts (§09, Governance prerequisites).
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">§ 02 — System Design</span>Logical architecture and component decomposition</h2>
+  <div class="col">
+    <p class="lede">Five layers, read top to bottom as a request descends from a browser to a stored blob. The colour of each component answers the question the commercial evaluation asks first: <em>is this something SharePoint already does, or something we have to buy or build?</em></p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 720" role="img" aria-label="Five-layer logical architecture: access channels, SharePoint presentation surfaces, application services, data and storage tiers, and platform infrastructure, with a cross-cutting controls rail spanning all layers.">
+        <defs>
+          <marker id="f1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <rect class="band" x="154" y="60" width="853" height="62"/>
+        <text class="lb" x="146" y="88" text-anchor="end">Access</text>
+        <text class="lb" x="146" y="103" text-anchor="end">&amp; channels</text>
+        <rect class="box" x="160" y="74" width="202" height="34"/>
+        <text class="t" x="170" y="88">Staff workstation</text><text class="t s" x="170" y="101">browser · Office · Explorer</text>
+        <rect class="box custom" x="373" y="74" width="202" height="34"/>
+        <text class="t" x="383" y="88">Scan station / MFP</text><text class="t s" x="383" y="101">TWAIN · scan-to-folder</text>
+        <rect class="box" x="586" y="74" width="202" height="34"/>
+        <text class="t" x="596" y="88">Remote &amp; mobile</text><text class="t s" x="596" y="101">VPN · gateway · MFA</text>
+        <rect class="box" x="799" y="74" width="202" height="34"/>
+        <text class="t" x="809" y="88">External stakeholder</text><text class="t s" x="809" y="101">reverse proxy + WAF</text>
+
+        <text class="al" x="570" y="143" text-anchor="end">HTTPS 443 · Kerberos or OIDC · security-trimmed</text>
+        <line class="ln" x1="580" y1="126" x2="580" y2="152" marker-end="url(#f1a)"/>
+
+        <rect class="band" x="154" y="156" width="853" height="108"/>
+        <text class="lb" x="146" y="200" text-anchor="end">Presentation</text>
+        <text class="lb" x="146" y="215" text-anchor="end">SharePoint SE</text>
+        <rect class="box native" x="160" y="170" width="202" height="34"/>
+        <text class="t" x="170" y="184">Division workspace</text><text class="t s" x="170" y="197">active documents</text>
+        <rect class="box native" x="373" y="170" width="202" height="34"/>
+        <text class="t" x="383" y="184">Archive Centre</text><text class="t s" x="383" y="197">intermediate + permanent</text>
+        <rect class="box native" x="586" y="170" width="202" height="34"/>
+        <text class="t" x="596" y="184">Search Centre</text><text class="t s" x="596" y="197">Arabic + English</text>
+        <rect class="box custom" x="799" y="170" width="202" height="34"/>
+        <text class="t" x="809" y="184">Document preview</text><text class="t s" x="809" y="197">Office Online Server</text>
+        <rect class="box custom" x="160" y="216" width="202" height="34"/>
+        <text class="t" x="170" y="230">Records officer console</text><text class="t s" x="170" y="243">file plan · disposition</text>
+        <rect class="box custom" x="373" y="216" width="202" height="34"/>
+        <text class="t" x="383" y="230">Approval inbox</text><text class="t s" x="383" y="243">K2 tasks · notifications</text>
+        <rect class="box custom" x="586" y="216" width="202" height="34"/>
+        <text class="t" x="596" y="230">Reports &amp; dashboards</text><text class="t s" x="596" y="243">SSRS / Report Server</text>
+        <rect class="box native" x="799" y="216" width="202" height="34"/>
+        <text class="t" x="809" y="230">Farm administration</text><text class="t s" x="809" y="243">Central Administration</text>
+
+        <text class="al" x="570" y="285" text-anchor="end">CSOM · REST · event receivers · timer jobs</text>
+        <line class="ln" x1="580" y1="268" x2="580" y2="294" marker-end="url(#f1a)"/>
+
+        <rect class="band" x="154" y="298" width="853" height="154"/>
+        <text class="lb" x="146" y="368" text-anchor="end">Application</text>
+        <text class="lb" x="146" y="383" text-anchor="end">services</text>
+        <rect class="box custom" x="160" y="312" width="202" height="34"/>
+        <text class="t" x="170" y="326">Capture &amp; ingestion</text><text class="t s" x="170" y="339">scan · mail · folder · API</text>
+        <rect class="box custom" x="373" y="312" width="202" height="34"/>
+        <text class="t" x="383" y="326">OCR + PDF/A rendition</text><text class="t s" x="383" y="339">third-party engine</text>
+        <rect class="box custom" x="586" y="312" width="202" height="34"/>
+        <text class="t" x="596" y="326">Metadata extraction</text><text class="t s" x="596" y="339">automated + manual</text>
+        <rect class="box custom" x="799" y="312" width="202" height="34"/>
+        <text class="t" x="809" y="326">Classification &amp; coding</text><text class="t s" x="809" y="339">rules · Document ID</text>
+        <rect class="box native" x="160" y="358" width="202" height="34"/>
+        <text class="t" x="170" y="372">Content Type Hub</text><text class="t s" x="170" y="385">publish to subscribers</text>
+        <rect class="box native" x="373" y="358" width="202" height="34"/>
+        <text class="t" x="383" y="372">Managed Metadata</text><text class="t s" x="383" y="385">function/activity/process</text>
+        <rect class="box native" x="586" y="358" width="202" height="34"/>
+        <text class="t" x="596" y="372">Content Organizer</text><text class="t s" x="596" y="385">drop-off routing rules</text>
+        <rect class="box native" x="799" y="358" width="202" height="34"/>
+        <text class="t" x="809" y="372">Retention &amp; disposition</text><text class="t s" x="809" y="385">info management policies</text>
+        <rect class="box native" x="160" y="404" width="202" height="34"/>
+        <text class="t" x="170" y="418">Holds &amp; eDiscovery</text><text class="t s" x="170" y="431">in-place legal hold</text>
+        <rect class="box custom" x="373" y="404" width="202" height="34"/>
+        <text class="t" x="383" y="418">Approval workflow</text><text class="t s" x="383" y="431">K2 process engine</text>
+        <rect class="box native" x="586" y="404" width="202" height="34"/>
+        <text class="t" x="596" y="418">Search crawl &amp; query</text><text class="t s" x="596" y="431">security trimming</text>
+        <rect class="box native" x="799" y="404" width="202" height="34"/>
+        <text class="t" x="809" y="418">Audit &amp; event capture</text><text class="t s" x="809" y="431">view · edit · delete</text>
+
+        <text class="al" x="570" y="473" text-anchor="end">TDS 1433 · RBS provider · SMB 445</text>
+        <line class="ln" x1="580" y1="456" x2="580" y2="482" marker-end="url(#f1a)"/>
+
+        <rect class="band" x="154" y="486" width="853" height="108"/>
+        <text class="lb" x="146" y="530" text-anchor="end">Data</text>
+        <text class="lb" x="146" y="545" text-anchor="end">&amp; storage</text>
+        <rect class="box native" x="160" y="500" width="202" height="34"/>
+        <text class="t" x="170" y="514">Content databases</text><text class="t s" x="170" y="527">≈40, partitioned by tier</text>
+        <rect class="box native" x="373" y="500" width="202" height="34"/>
+        <text class="t" x="383" y="514">Service application DBs</text><text class="t s" x="383" y="527">MMS · Search · SSS · UPA</text>
+        <rect class="box native" x="586" y="500" width="202" height="34"/>
+        <text class="t" x="596" y="514">Search index</text><text class="t s" x="596" y="527">local SSD, 2 partitions</text>
+        <rect class="box custom" x="799" y="500" width="202" height="34"/>
+        <text class="t" x="809" y="514">Audit warehouse</text><text class="t s" x="809" y="527">long-term audit store</text>
+        <rect class="box" x="160" y="546" width="202" height="34"/>
+        <text class="t" x="170" y="560">Tier 1 — active</text><text class="t s" x="170" y="573">SSD, read / write</text>
+        <rect class="box" x="373" y="546" width="202" height="34"/>
+        <text class="t" x="383" y="560">Tier 2 — intermediate</text><text class="t s" x="383" y="573">SAS, low change rate</text>
+        <rect class="box custom" x="586" y="546" width="202" height="34"/>
+        <text class="t" x="596" y="560">Tier 3 — permanent</text><text class="t s" x="596" y="573">WORM, immutable</text>
+        <rect class="box" x="799" y="546" width="202" height="34"/>
+        <text class="t" x="809" y="560">Backup + off-site copy</text><text class="t s" x="809" y="573">daily · air-gapped copy</text>
+
+        <text class="al" x="570" y="615" text-anchor="end">virtual disks on cluster storage</text>
+        <line class="ln" x1="580" y1="598" x2="580" y2="624" marker-end="url(#f1a)"/>
+
+        <rect class="band" x="154" y="628" width="853" height="62"/>
+        <text class="lb" x="146" y="663" text-anchor="end">Platform</text>
+        <rect class="box" x="160" y="642" width="202" height="34"/>
+        <text class="t" x="170" y="656">Nutanix cluster</text><text class="t s" x="170" y="669">AHV or vSphere</text>
+        <rect class="box" x="373" y="642" width="202" height="34"/>
+        <text class="t" x="383" y="656">AD DS · DNS · PKI · SMTP</text><text class="t s" x="383" y="669">core directory services</text>
+        <rect class="box" x="586" y="642" width="202" height="34"/>
+        <text class="t" x="596" y="656">Load balancer · WAF</text><text class="t s" x="596" y="669">publishing + TLS offload</text>
+        <rect class="box" x="799" y="642" width="202" height="34"/>
+        <text class="t" x="809" y="656">Backup · monitor · SIEM</text><text class="t s" x="809" y="669">operational plane</text>
+
+        <rect class="box" x="1016" y="60" width="216" height="630"/>
+        <text class="lb" x="1028" y="86">Cross-cutting</text>
+        <line class="ln thin" x1="1028" y1="96" x2="1220" y2="96"/>
+        <rect class="tick" x="1028" y="111" width="8" height="8"/>
+        <text class="t" x="1044" y="119">Identity &amp; access</text><text class="t s" x="1044" y="134">AD · OIDC SSO · RBAC</text>
+        <rect class="tick" x="1028" y="193" width="8" height="8"/>
+        <text class="t" x="1044" y="201">Classification</text><text class="t s" x="1044" y="216">4 levels, Open → Secret</text>
+        <rect class="tick" x="1028" y="275" width="8" height="8"/>
+        <text class="t" x="1044" y="283">Encryption</text><text class="t s" x="1044" y="298">TLS transit · TDE at rest</text>
+        <rect class="tick" x="1028" y="357" width="8" height="8"/>
+        <text class="t" x="1044" y="365">Leakage control</text><text class="t s" x="1044" y="380">AD RMS (IRM) · DLP</text>
+        <rect class="tick" x="1028" y="439" width="8" height="8"/>
+        <text class="t" x="1044" y="447">Audit trail</text><text class="t s" x="1044" y="462">all actions → SIEM</text>
+        <rect class="tick" x="1028" y="521" width="8" height="8"/>
+        <text class="t" x="1044" y="529">Retention governance</text><text class="t s" x="1044" y="544">plan · holds · disposal</text>
+        <rect class="tick" x="1028" y="603" width="8" height="8"/>
+        <text class="t" x="1044" y="611">Release management</text><text class="t s" x="1044" y="626">Git · PnP · CI/CD</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i class="sw native"></i> native SharePoint SE capability — configure</span>
+      <span><i class="sw custom"></i> third-party product or custom build — cost line</span>
+      <span><i class="sw"></i> platform / infrastructure service</span>
+    </div>
+    <figcaption><b>Fig. 1</b> The layered system. Everything amber is a procurement or development item; everything teal is licensed capability the Fund already owns. Eleven amber components is the honest answer to "what does SharePoint <em>not</em> give us" — and each one becomes a BOQ row.</figcaption>
+  </figure>
+
+  <h3>Component responsibilities</h3>
+  <p class="col">Each function mandated by Article 64 of the Executive Regulation, mapped to the component that satisfies it — so acceptance testing has a target rather than a sentiment.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Mandated function (Art. 64)</th><th>Component</th><th>How it is realised</th></tr></thead>
+    <tbody>
+      <tr><td>Capture and processing of documents electronically</td><td>Capture &amp; ingestion + OCR / PDF-A</td><td>Four channels — scan station, SMTP-enabled drop library, watched file-share folder, REST bulk API — all landing in one Drop-Off Library. Virus scan, then OCR to searchable PDF/A-2b.</td></tr>
+      <tr><td>Management of metadata elements and indexes</td><td>Managed Metadata Service + Content Type Hub</td><td>One term store with bilingual labels, published as site columns. All content types inherit from <code>DAS Base Document</code>; record series inherit from <code>DAS Record</code>.</td></tr>
+      <tr><td>Retention and destruction management</td><td>Information management policies + disposition workflow</td><td>Multi-stage retention on the content type: stage 1 expires against <em>Date Archived</em> and moves the item to the Archive Centre; stage 2 raises a disposition approval task.</td></tr>
+      <tr><td>Management of storage components</td><td>Content DB partitioning + RBS tiers</td><td>A separate content database per lifecycle tier, so Tier 3 can sit on immutable storage and follow its own backup schedule.</td></tr>
+      <tr><td>Search, retrieval and display</td><td>Search service + Office Online Server</td><td>Managed properties on every classification field; refiners for sector, function, year and confidentiality. Preview without download for Confidential and Secret.</td></tr>
+      <tr><td>Management of viewing permissions</td><td>AD groups → SharePoint groups; IRM</td><td>Permissions inherit from the division site; item-level breaks only for Secret. AD RMS applies persistent protection that survives download.</td></tr>
+      <tr><td>Migration of data and electronic documents</td><td>Migration pipeline (transient)</td><td>Inventory → map → transform → load → reconcile. Runs on dedicated servers, decommissioned after the reconciliation report is signed.</td></tr>
+      <tr><td>Integration with related electronic systems</td><td>Integration services layer</td><td>Eight interfaces, six of them named in the RFP matrix — see §06.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s03">
+  <h2><span class="num">§ 03 — Information Architecture</span>The code is the architecture</h2>
+  <div class="col">
+    <p class="lede">The Fund does not need a taxonomy invented for it. Its Document &amp; Records Control Guide already defines a unified code, and its records register already assigns one to every series. The system's job is to <em>generate</em> that code, not to ask a user to type it — and then to let every segment of it do work.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 400" role="img" aria-label="Decomposition of the document code SS-IT-PY-02-R4 into sector, division, document type, serial and revision segments, and the site path, library and term bindings each segment resolves to.">
+        <defs>
+          <marker id="f2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <text class="lb" x="177" y="44">Document code — as issued today</text>
+
+        <rect class="code-seg" x="177" y="64" width="150" height="54"/>
+        <text class="codebig" x="252" y="99" text-anchor="middle">SS</text>
+        <text class="t" x="344" y="99" text-anchor="middle" font-size="20">–</text>
+        <rect class="code-seg" x="361" y="64" width="150" height="54"/>
+        <text class="codebig" x="436" y="99" text-anchor="middle">IT</text>
+        <text class="t" x="528" y="99" text-anchor="middle" font-size="20">–</text>
+        <rect class="code-seg" x="545" y="64" width="150" height="54"/>
+        <text class="codebig" x="620" y="99" text-anchor="middle">PY</text>
+        <text class="t" x="712" y="99" text-anchor="middle" font-size="20">–</text>
+        <rect class="code-seg" x="729" y="64" width="150" height="54"/>
+        <text class="codebig" x="804" y="99" text-anchor="middle">02</text>
+        <text class="t" x="896" y="99" text-anchor="middle" font-size="20">–</text>
+        <rect class="code-seg" x="913" y="64" width="150" height="54"/>
+        <text class="codebig" x="988" y="99" text-anchor="middle">R4</text>
+
+        <line class="ln thin" x1="252" y1="120" x2="252" y2="156"/>
+        <line class="ln thin" x1="436" y1="120" x2="436" y2="156"/>
+        <line class="ln thin" x1="620" y1="120" x2="620" y2="156"/>
+        <line class="ln thin" x1="804" y1="120" x2="804" y2="156"/>
+        <line class="ln thin" x1="988" y1="120" x2="988" y2="156"/>
+
+        <rect class="box" x="177" y="158" width="150" height="82"/>
+        <text class="t s" x="189" y="178">SECTOR</text>
+        <text class="t" x="189" y="197" font-size="12">Support Services</text>
+        <text class="t s" x="189" y="214">11 sectors</text>
+        <text class="t s" x="189" y="229">org term set</text>
+
+        <rect class="box" x="361" y="158" width="150" height="82"/>
+        <text class="t s" x="373" y="178">DIVISION</text>
+        <text class="t" x="373" y="197" font-size="12">Information Tech.</text>
+        <text class="t s" x="373" y="214">39 divisions</text>
+        <text class="t s" x="373" y="229">org term set</text>
+
+        <rect class="box" x="545" y="158" width="150" height="82"/>
+        <text class="t s" x="557" y="178">DOCUMENT TYPE</text>
+        <text class="t" x="557" y="197" font-size="12">Policy</text>
+        <text class="t s" x="557" y="214">PY ME CR DE</text>
+        <text class="t s" x="557" y="229">RE F## R##</text>
+
+        <rect class="box" x="729" y="158" width="150" height="82"/>
+        <text class="t s" x="741" y="178">SERIAL</text>
+        <text class="t" x="741" y="197" font-size="12">2nd of its type</text>
+        <text class="t s" x="741" y="214">reserved by the</text>
+        <text class="t s" x="741" y="229">ID provider</text>
+
+        <rect class="box" x="913" y="158" width="150" height="82"/>
+        <text class="t s" x="925" y="178">REVISION</text>
+        <text class="t" x="925" y="197" font-size="12">Issue 4</text>
+        <text class="t s" x="925" y="214">X = reissue</text>
+        <text class="t s" x="925" y="229">Y = amendment</text>
+
+        <text class="al em" x="632" y="270">each segment resolves to</text>
+        <line class="ln em" x1="620" y1="244" x2="620" y2="282" marker-end="url(#f2a)"/>
+
+        <rect class="box native" x="177" y="286" width="286" height="84"/>
+        <text class="t s" x="189" y="306">SITE PATH</text>
+        <text class="t" x="189" y="326" font-family="var(--font-mono)" font-size="12">/sites/das-ss/it</text>
+        <text class="t s" x="189" y="345">sector site collection ▸</text>
+        <text class="t s" x="189" y="360">division sub-site</text>
+
+        <rect class="box native" x="477" y="286" width="286" height="84"/>
+        <text class="t s" x="489" y="306">LIBRARY + CONTENT TYPE</text>
+        <text class="t" x="489" y="326" font-size="12">Policies &amp; Delegations</text>
+        <text class="t s" x="489" y="345">content type: DAS Policy</text>
+        <text class="t s" x="489" y="360">retention rule: PY series</text>
+
+        <rect class="box native" x="777" y="286" width="286" height="84"/>
+        <text class="t s" x="789" y="306">TERM BINDINGS + SEARCH</text>
+        <text class="t s" x="789" y="326">Org unit ▸ SS ▸ IT</text>
+        <text class="t s" x="789" y="345">Doc type ▸ Policy</text>
+        <text class="t s" x="789" y="360">refiners + managed props</text>
+      </svg>
+    </div>
+    <figcaption><b>Fig. 2</b> One identifier, five decisions. Because the code carries sector, division and type, the system can derive the destination site, library, content type, retention rule and search refiners without a single user choice — which is what makes bulk ingestion and migration mechanical rather than manual. Title and version complete the seven parts defined in the Control Guide.</figcaption>
+  </figure>
+
+  <h3>Site topology</h3>
+  <p class="col">Deliberately shallow. Sector-level site collections keep content databases separable and permissions comprehensible; the archive is a separate site collection so it can be moved onto immutable storage as a unit.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Level</th><th>Artefact</th><th>Count</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td class="n">0</td><td class="c">/sites/das</td><td class="n">1</td><td>Landing portal, enterprise search, policy library, help &amp; training. Hub for navigation.</td></tr>
+      <tr><td class="n">1</td><td class="c">/sites/das-&lt;sector&gt;</td><td class="n">11</td><td>Site collection per sector. One content database per sector keeps each ≤200 GB and lets restores be scoped.</td></tr>
+      <tr><td class="n">2</td><td class="c">/sites/das-&lt;sector&gt;/&lt;div&gt;</td><td class="n">39</td><td>Division sub-site. Security boundary — AD group membership is granted here, not per item.</td></tr>
+      <tr><td class="n">3</td><td>Document library per record group</td><td class="n">~180</td><td>Series with shared metadata and retention are co-located; the record series field distinguishes them. Not one library per series.</td></tr>
+      <tr><td class="n">—</td><td class="c">/sites/das-archive</td><td class="n">1</td><td>Archive Centre. Content Organizer receives transfers; libraries mirror the file plan, not the org chart. Own content DB on Tier 2/3 storage.</td></tr>
+      <tr><td class="n">—</td><td class="c">/sites/das-dropoff</td><td class="n">1</td><td>Ingestion staging. Nothing is a record until it leaves here with a code.</td></tr>
+    </tbody>
+  </table>
+  <caption>Library count is indicative: the ~464 registered series collapse to roughly 180 libraries once series sharing a metadata set and retention rule are grouped. Confirmed during the file-plan workshop.</caption>
+  </div>
+
+  <h3>Core metadata schema</h3>
+  <p class="col">Every column below already exists in the Fund's own records register — the register is the schema. Fields marked <em>system</em> are never typed by a user.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Source</th><th>Req.</th><th>What it drives</th></tr></thead>
+    <tbody>
+      <tr><td>Title (AR) / Title (EN)</td><td>Text</td><td>User / extraction</td><td>Yes</td><td>Display, search</td></tr>
+      <tr><td>Document code</td><td>Text — system</td><td>ID provider</td><td>Yes</td><td>Identity, cross-reference, file naming</td></tr>
+      <tr><td>Sector · Division</td><td>Managed metadata</td><td>Org term set</td><td>Yes</td><td>Routing, permissions, reporting</td></tr>
+      <tr><td>Function → Activity → Process</td><td>Managed metadata (3 levels)</td><td>Classification term set</td><td>Yes</td><td>File plan position, retention rule, refiners</td></tr>
+      <tr><td>Record series</td><td>Lookup to register</td><td>Records register</td><td>Yes</td><td>Selects the retention rule and disposition</td></tr>
+      <tr><td>Document type</td><td>Choice</td><td>Control Guide codes</td><td>Yes</td><td>Content type, code segment 3</td></tr>
+      <tr><td>Confidentiality</td><td>Choice — 4 levels</td><td>Information Owner</td><td>Yes</td><td>Permissions, IRM, DLP, download / print rules</td></tr>
+      <tr><td>Vitality</td><td>Choice — vital / normal</td><td>Retention plan</td><td>Yes</td><td>DR recovery priority, backup tier</td></tr>
+      <tr><td>Media form</td><td>Choice</td><td>Retention plan col. 5</td><td>Yes</td><td>Hybrid paper/electronic tracking</td></tr>
+      <tr><td>Date of issue · Date archived</td><td>Date</td><td>User / system</td><td>Yes</td><td>Retention stage triggers</td></tr>
+      <tr><td>Retention — active (yrs)</td><td>Number</td><td>Register</td><td>Yes</td><td>Stage 1 expiry: move to Archive Centre</td></tr>
+      <tr><td>Retention — archive (yrs)</td><td>Number</td><td>Register</td><td>Yes</td><td>Stage 2 expiry: disposition review</td></tr>
+      <tr><td>Final disposition</td><td>Choice — destroy / permanent / appraise</td><td>NLA-approved plan</td><td>Yes</td><td>Branch at end of life</td></tr>
+      <tr><td>Information Owner</td><td>Person</td><td>Division manager</td><td>Yes</td><td>Approvals, classification authority, disposition sign-off</td></tr>
+      <tr><td>Source system · Legacy ID</td><td>Text — system</td><td>Migration</td><td>Migrated only</td><td>Reconciliation, provenance evidence</td></tr>
+      <tr><td>Hold status</td><td>Boolean — system</td><td>Hold engine</td><td>System</td><td>Suspends every retention gate</td></tr>
+      <tr><td>Language</td><td>Choice — AR / EN / bilingual</td><td>Detection + user</td><td>Yes</td><td>Word-breaker selection, UI locale hints</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Confidentiality drives behaviour, not just a label</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Level</th><th>Default scope</th><th>Encryption / rights</th><th>Download</th><th>Sharing</th><th>Audit</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-open">Open</span></td><td>All authenticated staff</td><td>TLS + TDE</td><td>Allowed</td><td>Internal link; external on approval</td><td>Standard</td></tr>
+      <tr><td><span class="pill p-sens">Sensitive</span></td><td>Division + delegated roles</td><td>TLS + TDE</td><td>Allowed, logged</td><td>Internal only</td><td>Standard</td></tr>
+      <tr><td><span class="pill p-conf">Confidential</span></td><td>Division, named groups</td><td>TLS + TDE + IRM</td><td>Blocked by default; preview only</td><td>Named recipients, expiring</td><td>Every view logged</td></tr>
+      <tr><td><span class="pill p-secr">Secret</span></td><td>Named individuals only</td><td>TLS + TDE + IRM, no print</td><td>Blocked</td><td>Disabled</td><td>Every view logged + SIEM alert on bulk read</td></tr>
+    </tbody>
+  </table>
+  <caption>Levels and examples per the Information Security Handbook §4. Assigning the level is the Information Owner's decision, per §20(a) — the system enforces, it does not decide.</caption>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">§ 04 — Data Flow</span>The life of a record, and the gates that move it</h2>
+  <div class="col">
+    <p class="lede">The Executive Regulation does not describe a repository. It describes a <em>journey</em> with three custody phases and two irreversible decisions. Modelling it as a status column would satisfy a demo and fail an audit; modelling it as physical movement between storage tiers with an approval gate at each boundary is what the law actually requires.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 470" role="img" aria-label="Record lifecycle from capture through active custody and intermediate archive, splitting at a disposition gate into destruction or permanent transfer to the National Archives, with a legal hold that suspends both gates.">
+        <defs>
+          <marker id="f3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <text class="lb" x="32" y="30">Custody phases — Federal Law 7 / 2008, Executive Regulation Ch. 7 (transfer) &amp; Ch. 8 (destruction)</text>
+        <line class="ln thin" x1="32" y1="42" x2="1208" y2="42"/>
+
+        <rect class="box" x="32" y="160" width="170" height="80"/>
+        <text class="t b" x="46" y="186">Capture / create</text>
+        <text class="t s" x="46" y="204">drop-off library</text>
+        <text class="t s" x="46" y="220">not yet a record</text>
+
+        <line class="ln" x1="202" y1="200" x2="256" y2="200" marker-end="url(#f3a)"/>
+        <text class="al" x="229" y="188" text-anchor="middle">declare</text>
+
+        <rect class="box native" x="262" y="160" width="190" height="80"/>
+        <text class="t b" x="276" y="186">Active — division</text>
+        <text class="t s" x="276" y="204">Tier 1 · SSD</text>
+        <text class="t s" x="276" y="220">editable, versioned</text>
+
+        <line class="ln" x1="452" y1="200" x2="556" y2="200" marker-end="url(#f3a)"/>
+        <rect class="tick" x="498" y="194" width="9" height="12"/>
+        <text class="al em" x="502" y="118" text-anchor="middle">GATE 1 · active retention expires</text>
+        <text class="al" x="502" y="134" text-anchor="middle">e.g. 5 years in division</text>
+        <line class="ln thin dash" x1="502" y1="140" x2="502" y2="190"/>
+
+        <rect class="box custom" x="562" y="160" width="190" height="80"/>
+        <text class="t b" x="576" y="186">Intermediate — archive</text>
+        <text class="t s" x="576" y="204">Tier 2 → Tier 3 WORM</text>
+        <text class="t s" x="576" y="220">read-only, no delete</text>
+
+        <line class="ln" x1="752" y1="200" x2="796" y2="200"/>
+        <rect class="tick" x="686" y="194" width="9" height="12"/>
+        <text class="al em" x="660" y="286" text-anchor="middle">GATE 2 · archive retention expires</text>
+        <text class="al" x="660" y="302" text-anchor="middle">disposition committee appraises</text>
+        <line class="ln thin dash" x1="660" y1="272" x2="678" y2="212"/>
+
+        <line class="ln" x1="800" y1="200" x2="800" y2="104"/>
+        <line class="ln" x1="800" y1="104" x2="844" y2="104" marker-end="url(#f3a)"/>
+        <line class="ln" x1="800" y1="200" x2="800" y2="316"/>
+        <line class="ln" x1="800" y1="316" x2="844" y2="316" marker-end="url(#f3a)"/>
+
+        <rect class="box" x="850" y="64" width="170" height="80"/>
+        <text class="t b" x="864" y="90">Destroy</text>
+        <text class="t s" x="864" y="108">certificate + NLA form</text>
+        <text class="t s" x="864" y="124">committee minuted</text>
+        <text class="al" x="864" y="52">no research or historical value</text>
+
+        <rect class="box" x="850" y="276" width="170" height="80"/>
+        <text class="t b" x="864" y="302">Transfer package</text>
+        <text class="t s" x="864" y="320">PDF/A + metadata XML</text>
+        <text class="t s" x="864" y="336">manifest signed</text>
+        <text class="al" x="864" y="374">historical or research value</text>
+
+        <line class="ln em" x1="1020" y1="316" x2="1064" y2="316" marker-end="url(#f3a)"/>
+
+        <rect class="zonefill" x="1070" y="276" width="140" height="80"/>
+        <rect class="zone" x="1070" y="276" width="140" height="80"/>
+        <text class="t b" x="1082" y="302">National Archives</text>
+        <text class="t s" x="1082" y="320">permanent custody</text>
+        <text class="t s" x="1082" y="336">outside the Fund</text>
+
+        <rect class="box custom" x="392" y="400" width="356" height="52"/>
+        <text class="t b" x="406" y="422">Legal hold / litigation</text>
+        <text class="t s" x="406" y="440">freezes both gates until released — audit-logged</text>
+        <line class="ln dash" x1="502" y1="400" x2="502" y2="248" marker-end="url(#f3a)"/>
+        <line class="ln dash" x1="690" y1="400" x2="690" y2="248" marker-end="url(#f3a)"/>
+      </svg>
+    </div>
+    <figcaption><b>Fig. 3</b> Two gates, and only two. Everything before Gate 1 is reversible; everything after it is not. The retention values are not code — they come from the record series row in the Fund's register, which is why the register must be signed before build (§09).</figcaption>
+  </figure>
+
+  <h3>Ingestion pipeline</h3>
+  <p class="col">All four capture channels converge on one drop-off library, so there is a single place where classification, coding and virus scanning happen — and a single audit point.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th class="n">Step</th><th>Action</th><th>Component</th><th>Failure behaviour</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Arrival — scan station, SMTP-enabled library, watched folder, or REST bulk API</td><td>Capture service</td><td>Rejected item stays in an exception queue with reason; sender notified</td></tr>
+      <tr><td class="n">2</td><td>Malware scan before any processing</td><td>SharePoint-aware AV</td><td>Quarantine, alert to SOC</td></tr>
+      <tr><td class="n">3</td><td>OCR and rendition to searchable PDF/A-2b; original preserved alongside</td><td>OCR engine</td><td>Low-confidence pages flagged for manual re-scan, not silently indexed</td></tr>
+      <tr><td class="n">4</td><td>Metadata extraction — dates, reference numbers, correspondent, entities</td><td>Extraction service</td><td>Blank fields left for the originator; never guessed into a mandatory field</td></tr>
+      <tr><td class="n">5</td><td>Classification proposal — rules first, statistical model second</td><td>Classification service</td><td>Below confidence threshold → routed to the originator to classify</td></tr>
+      <tr><td class="n">6</td><td>Human confirmation of series, confidentiality and Information Owner</td><td>Drop-off form</td><td>Item cannot leave drop-off until mandatory fields are complete</td></tr>
+      <tr><td class="n">7</td><td>Code reservation and assignment</td><td>Document ID provider</td><td>Sequence is transactional; gaps are logged, never re-used</td></tr>
+      <tr><td class="n">8</td><td>Routing to the destination site and library</td><td>Content Organizer</td><td>Unmatched rule → holding library + records officer task</td></tr>
+      <tr><td class="n">9</td><td>Retention rule bound; <em>Date archived</em> stamped; item indexed</td><td>Policy + search</td><td>Rule binding failure blocks declaration and raises an incident</td></tr>
+      <tr><td class="n">10</td><td>Audit event written and forwarded to SIEM</td><td>Audit pipeline</td><td>Audit write failure fails the operation — never a silent success</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <b>Step 3 is the step most proposals omit.</b> SharePoint Server has no OCR of its own. Without a rendition engine at ingestion, none of the ~70,000 migrated scans is full-text searchable — and "advanced search including full-text" is an explicit acceptance criterion. The engine, its licensing model (per page, per core, or per server) and the reprocessing time for the migration backlog all belong in the BOQ — and against an 8 TB corpus the reprocessing time is a schedule item, not a footnote (§07).
+  </div>
+
+  <h3>Retrieval flow</h3>
+  <ol class="col">
+    <li>Query enters the Search Centre; the user's identity resolves through the same AD groups used for permissions.</li>
+    <li>Results are <strong>security-trimmed at query time</strong> — a user never learns that a document they cannot open exists.</li>
+    <li>Refiners narrow by sector, function, year, document type and confidentiality; the record series field allows a records officer to pull an entire series in one click.</li>
+    <li>Selection opens in Office Online Server for preview. For <span class="pill p-conf">Confidential</span> and <span class="pill p-secr">Secret</span> the download path is closed and the preview is the only surface.</li>
+    <li>Download, where permitted, applies IRM so that protection persists outside the farm.</li>
+    <li>Every view, download and print attempt writes an audit event; bulk-read patterns raise a SIEM alert.</li>
+  </ol>
+</section>
+
+<section id="s05">
+  <h2><span class="num">§ 05 — Application Flow</span>Who touches a document between upload and custody</h2>
+  <div class="col">
+    <p class="lede">The lifecycle in §04 spans years. This spans minutes. The design intent is that the system does the mechanical work — scanning, reading, proposing, coding, filing — and asks a human only for the two judgements a machine has no authority to make: <em>is this classified correctly</em> and <em>do I approve it</em>.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 600" role="img" aria-label="Swimlane flow across originator, system, reviewer, records officer and archive lanes: upload, automated processing, human confirmation, approval, coding and filing, record declaration, and immutable custody, with a rejection path back to the originator.">
+        <defs>
+          <marker id="f4a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <rect class="band" x="178" y="60" width="1038" height="90"/>
+        <text class="lb" x="170" y="110" text-anchor="end">Originator</text>
+        <rect class="band" x="178" y="158" width="1038" height="120"/>
+        <text class="lb" x="170" y="213" text-anchor="end">DAS</text>
+        <text class="lb" x="170" y="228" text-anchor="end">system</text>
+        <rect class="band" x="178" y="286" width="1038" height="90"/>
+        <text class="lb" x="170" y="326" text-anchor="end">Reviewer /</text>
+        <text class="lb" x="170" y="341" text-anchor="end">approver</text>
+        <rect class="band" x="178" y="384" width="1038" height="90"/>
+        <text class="lb" x="170" y="424" text-anchor="end">Records</text>
+        <text class="lb" x="170" y="439" text-anchor="end">officer</text>
+        <rect class="band" x="178" y="482" width="1038" height="70"/>
+        <text class="lb" x="170" y="522" text-anchor="end">Archive</text>
+
+        <rect class="box" x="190" y="81" width="128" height="48"/>
+        <text class="t" x="200" y="101" font-size="12">Upload or scan</text>
+        <text class="t s" x="200" y="117">any of 4 channels</text>
+
+        <polyline class="ln" points="318,105 328,105 328,218 338,218" marker-end="url(#f4a)"/>
+
+        <rect class="box custom" x="338" y="194" width="128" height="48"/>
+        <text class="t" x="348" y="214" font-size="12">AV · OCR · PDF/A</text>
+        <text class="t s" x="348" y="230">seconds, unattended</text>
+
+        <line class="ln" x1="466" y1="218" x2="484" y2="218" marker-end="url(#f4a)"/>
+
+        <rect class="box custom" x="486" y="194" width="128" height="48"/>
+        <text class="t" x="496" y="214" font-size="12">Propose index</text>
+        <text class="t s" x="496" y="230">rules + model</text>
+
+        <polyline class="ln" points="614,218 624,218 624,105 634,105" marker-end="url(#f4a)"/>
+
+        <rect class="box" x="634" y="81" width="128" height="48"/>
+        <text class="t" x="644" y="101" font-size="12">Confirm index</text>
+        <text class="t s" x="644" y="117">series + level</text>
+
+        <polyline class="ln" points="762,105 772,105 772,331 782,331" marker-end="url(#f4a)"/>
+
+        <rect class="box custom" x="782" y="307" width="128" height="48"/>
+        <text class="t" x="792" y="327" font-size="12">Review, approve</text>
+        <text class="t s" x="792" y="343">K2 task</text>
+
+        <polyline class="ln dash" points="782,325 766,325 766,282 732,282 698,282 698,133" marker-end="url(#f4a)"/>
+        <text class="al" x="732" y="274" text-anchor="middle">returned for correction</text>
+
+        <polyline class="ln" points="910,331 920,331 920,218 930,218" marker-end="url(#f4a)"/>
+
+        <rect class="box native" x="930" y="194" width="128" height="48"/>
+        <text class="t" x="940" y="214" font-size="12">Code · file · index</text>
+        <text class="t s" x="940" y="230">Content Organizer</text>
+
+        <polyline class="ln" points="1058,218 1068,218 1068,429 1078,429" marker-end="url(#f4a)"/>
+
+        <rect class="box native" x="1078" y="405" width="128" height="48"/>
+        <text class="t" x="1088" y="425" font-size="12">Declare record</text>
+        <text class="t s" x="1088" y="441">retention starts</text>
+
+        <line class="ln em" x1="1142" y1="453" x2="1142" y2="489" marker-end="url(#f4a)"/>
+
+        <rect class="box custom" x="1078" y="493" width="128" height="48"/>
+        <text class="t" x="1088" y="513" font-size="12">Immutable</text>
+        <text class="t s" x="1088" y="529">version locked</text>
+
+        <line class="ln thin dash" x1="190" y1="572" x2="1206" y2="572"/>
+        <text class="al" x="190" y="590">every step above writes an audit event — user, item, action, timestamp — forwarded to SIEM</text>
+      </svg>
+    </div>
+    <figcaption><b>Fig. 4</b> Two human touch-points in a seven-step path. The rejection loop returns to the originator, not to the queue, so ownership of a bad classification never becomes ambiguous. Records-officer involvement is a single confirmation, not a bottleneck on every upload.</figcaption>
+  </figure>
+
+  <h3>The journeys the system has to be good at</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Journey</th><th>Actor</th><th>Path</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>File a working document</td><td>Any employee</td><td>Upload → confirm proposed index → approve → filed</td><td>Under 60 seconds of human time</td></tr>
+      <tr><td>Bulk-file a scanned batch</td><td>Records clerk</td><td>Scan batch → separator-sheet split → batch index → single confirmation for the batch</td><td>Per-batch confirmation, not per-page</td></tr>
+      <tr><td>Find a document</td><td>Any employee</td><td>Search → refine by sector / function / year → preview</td><td>Result set in ≤3 s; first-page preview in ≤5 s</td></tr>
+      <tr><td>Pull a whole series for audit</td><td>Auditor, records officer</td><td>Series filter → export manifest → read-only package</td><td>No download of restricted items; manifest is the deliverable</td></tr>
+      <tr><td>Share outside the Fund</td><td>Division manager</td><td>Request → approval → expiring, watermarked, IRM-protected link</td><td>Never a permanent external permission</td></tr>
+      <tr><td>Apply a legal hold</td><td>Legal &amp; Legislation</td><td>Select scope (series, division, date range) → hold → gates freeze</td><td>Hold survives retention expiry; release is a logged event</td></tr>
+      <tr><td>Run a disposition cycle</td><td>Disposition committee</td><td>Due list → appraise → destroy or transfer → certificate</td><td>Nothing is destroyed without a minuted decision</td></tr>
+      <tr><td>Amend the retention plan</td><td>Records &amp; Archives Unit</td><td>Edit series → approval → National Archives submission → publish</td><td>Versioned; the old rule stays visible for audit</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Workflows in scope</h3>
+  <ul class="col">
+    <li><strong>Document approval</strong> — serial or parallel, driven by the delegation-of-authority matrix, not by hard-coded approvers.</li>
+    <li><strong>Classification exception</strong> — raised when the proposal engine is below its confidence threshold or the routing rule does not match.</li>
+    <li><strong>External sharing request</strong> — manager approval, expiry date mandatory, auto-revoke on expiry.</li>
+    <li><strong>Disposition approval</strong> — committee vote, mandatory minute reference, generates the destruction certificate.</li>
+    <li><strong>Transfer to National Archives</strong> — assembles the PDF/A package and metadata manifest, requires a signed transfer record.</li>
+    <li><strong>Retention plan change</strong> — the only route by which a retention value in the register can change; five-yearly review is a scheduled instance of it.</li>
+    <li><strong>Legal hold apply / release</strong> — restricted to a named role, dual-logged.</li>
+  </ul>
+</section>
+
+<section id="s06">
+  <h2><span class="num">§ 06 — Integration</span>Eight interfaces, and what each one is allowed to do</h2>
+  <div class="col">
+    <p class="lede">The RFP matrix names six. Two more are implied by the security requirements and by the National Archives obligation, and both are easier to build now than to retrofit. Direction matters as much as protocol: three of these interfaces are read-only into the DMS, and treating them as bidirectional is how a document management system quietly becomes a system of record for data it does not own.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 600" role="img" aria-label="Integration map with the DMS at the centre and eight connected systems: Active Directory and identity management, Oracle ERP, K2 workflow, file servers, legacy SharePoint farms, Exchange mail, the National Archives, and SIEM, each labelled with protocol, direction and cadence.">
+        <defs>
+          <marker id="f5a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+          <marker id="f5b" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M10,1 L1,5 L10,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <rect class="box hub" x="470" y="56" width="300" height="504"/>
+        <text class="t big" x="620" y="88" text-anchor="middle">DAS on SharePoint Server SE</text>
+        <line class="ln thin" x1="486" y1="102" x2="754" y2="102"/>
+        <text class="lb" x="486" y="126">Integration services</text>
+        <rect class="tick" x="486" y="144" width="8" height="8"/><text class="t" x="502" y="152" font-size="12">REST / CSOM endpoints</text>
+        <rect class="tick" x="486" y="188" width="8" height="8"/><text class="t" x="502" y="196" font-size="12">LDAP directory sync</text>
+        <rect class="tick" x="486" y="232" width="8" height="8"/><text class="t" x="502" y="240" font-size="12">Oracle ERP adapter</text>
+        <rect class="tick" x="486" y="276" width="8" height="8"/><text class="t" x="502" y="284" font-size="12">K2 SmartObject bridge</text>
+        <rect class="tick" x="486" y="320" width="8" height="8"/><text class="t" x="502" y="328" font-size="12">Federated search sources</text>
+        <rect class="tick" x="486" y="364" width="8" height="8"/><text class="t" x="502" y="372" font-size="12">National Archives packager</text>
+        <rect class="tick" x="486" y="408" width="8" height="8"/><text class="t" x="502" y="416" font-size="12">Audit event forwarder</text>
+        <line class="ln thin" x1="486" y1="446" x2="754" y2="446"/>
+        <text class="lb" x="486" y="470">Repository</text>
+        <text class="t s" x="486" y="492">11 sector site collections</text>
+        <text class="t s" x="486" y="510">+ Archive Centre</text>
+        <text class="t s" x="486" y="536">SQL Always On · tiered BLOB</text>
+
+        <rect class="box" x="40" y="80" width="260" height="84"/>
+        <text class="t b" x="54" y="106">Active Directory · IDM</text>
+        <text class="t s" x="54" y="124">users, groups, sign-in</text>
+        <text class="t s" x="54" y="140">authoritative for identity</text>
+        <line class="ln" x1="300" y1="122" x2="466" y2="122" marker-end="url(#f5a)"/>
+        <text class="al" x="385" y="112" text-anchor="middle">LDAP sync · OIDC sign-in</text>
+        <text class="al" x="385" y="140" text-anchor="middle">hourly · at each sign-in</text>
+
+        <rect class="box" x="40" y="200" width="260" height="84"/>
+        <text class="t b" x="54" y="226">Oracle ERP</text>
+        <text class="t s" x="54" y="244">contracts, POs, invoices</text>
+        <text class="t s" x="54" y="260">authoritative for the record</text>
+        <line class="ln" x1="304" y1="242" x2="466" y2="242" marker-end="url(#f5a)" marker-start="url(#f5b)"/>
+        <text class="al" x="385" y="232" text-anchor="middle">REST / JSON over TLS</text>
+        <text class="al" x="385" y="260" text-anchor="middle">on event · link, not copy</text>
+
+        <rect class="box" x="40" y="320" width="260" height="84"/>
+        <text class="t b" x="54" y="346">K2 workflow platform</text>
+        <text class="t s" x="54" y="364">existing process engine</text>
+        <text class="t s" x="54" y="380">owns approval state</text>
+        <line class="ln" x1="304" y1="362" x2="466" y2="362" marker-end="url(#f5a)" marker-start="url(#f5b)"/>
+        <text class="al" x="385" y="352" text-anchor="middle">REST · SmartObjects</text>
+        <text class="al" x="385" y="380" text-anchor="middle">real time, both directions</text>
+
+        <rect class="box" x="40" y="440" width="260" height="84"/>
+        <text class="t b" x="54" y="466">File servers · shares</text>
+        <text class="t s" x="54" y="484">legacy unstructured store</text>
+        <text class="t s" x="54" y="500">decommissioned after cut-over</text>
+        <line class="ln" x1="300" y1="482" x2="466" y2="482" marker-end="url(#f5a)"/>
+        <text class="al" x="385" y="472" text-anchor="middle">SMB 445 · watched folder</text>
+        <text class="al" x="385" y="500" text-anchor="middle">bulk load, then delta</text>
+
+        <rect class="box" x="940" y="80" width="260" height="84"/>
+        <text class="t b" x="954" y="106">Existing SharePoint</text>
+        <text class="t s" x="954" y="124">TalkSPS · WSPS · ICBS</text>
+        <text class="t s" x="954" y="140">eFund correspondence</text>
+        <line class="ln" x1="774" y1="122" x2="936" y2="122" marker-end="url(#f5a)" marker-start="url(#f5b)"/>
+        <text class="al" x="855" y="112" text-anchor="middle">REST · web services</text>
+        <text class="al" x="855" y="140" text-anchor="middle">migrate in, then federate</text>
+
+        <rect class="box" x="940" y="200" width="260" height="84"/>
+        <text class="t b" x="954" y="226">Exchange / mail</text>
+        <text class="t s" x="954" y="244">correspondence capture</text>
+        <text class="t s" x="954" y="260">optional in the RFP</text>
+        <line class="ln" x1="936" y1="242" x2="774" y2="242" marker-end="url(#f5a)"/>
+        <text class="al" x="855" y="232" text-anchor="middle">SMTP to drop library</text>
+        <text class="al" x="855" y="260" text-anchor="middle">on send · one way in</text>
+
+        <rect class="box" x="940" y="320" width="260" height="84"/>
+        <text class="t b" x="954" y="346">National Archives</text>
+        <text class="t s" x="954" y="364">retention plan approval</text>
+        <text class="t s" x="954" y="380">permanent transfer</text>
+        <line class="ln em" x1="774" y1="362" x2="936" y2="362" marker-end="url(#f5a)"/>
+        <text class="al em" x="855" y="352" text-anchor="middle">PDF/A + metadata XML</text>
+        <text class="al" x="855" y="380" text-anchor="middle">on disposition · one way out</text>
+
+        <rect class="box" x="940" y="440" width="260" height="84"/>
+        <text class="t b" x="954" y="466">SIEM</text>
+        <text class="t s" x="954" y="484">security monitoring</text>
+        <text class="t s" x="954" y="500">read-only consumer</text>
+        <line class="ln" x1="774" y1="482" x2="936" y2="482" marker-end="url(#f5a)"/>
+        <text class="al" x="855" y="472" text-anchor="middle">syslog / CEF</text>
+        <text class="al" x="855" y="500" text-anchor="middle">continuous · one way out</text>
+      </svg>
+    </div>
+    <figcaption><b>Fig. 5</b> Direction is the design decision. Oracle stays authoritative for the transaction and the DMS holds the document with a link back — copying ERP data into document metadata creates two truths and a reconciliation problem nobody owns. Likewise, K2 keeps approval state; the DMS stores the outcome, not the process.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Interface</th><th>Direction</th><th>Method</th><th>Trigger</th><th>Owner of truth</th></tr></thead>
+    <tbody>
+      <tr><td>Active Directory</td><td>In</td><td>LDAP / LDAPS; Kerberos or OIDC for sign-in</td><td>Scheduled sync + sign-in</td><td>AD</td></tr>
+      <tr><td>Identity Management (Salahyati)</td><td>In</td><td>LDAP group projection into AD security groups</td><td>Scheduled</td><td>IDM</td></tr>
+      <tr><td>Oracle ERP</td><td>Both</td><td>REST / JSON over TLS via the integration tier</td><td>On document event; on ERP transaction close</td><td>Oracle for the transaction, DMS for the document</td></tr>
+      <tr><td>K2</td><td>Both</td><td>REST + SmartObjects</td><td>Task raised / task completed</td><td>K2 for process state</td></tr>
+      <tr><td>Shared folders</td><td>In</td><td>SMB; watched-folder agent</td><td>Bulk at migration, then delta until cut-over</td><td>DMS after cut-over</td></tr>
+      <tr><td>Existing SharePoint farms</td><td>Both</td><td>REST / web services; federated result source</td><td>Migration batch; live query</td><td>DMS after migration; source until then</td></tr>
+      <tr><td>Exchange <em>(optional)</em></td><td>In</td><td>SMTP-enabled document library</td><td>User forwards or rule fires</td><td>DMS once captured</td></tr>
+      <tr><td>National Archives <em>(external)</em></td><td>Out</td><td>PDF/A package + metadata manifest, per NLA templates</td><td>Disposition outcome; retention plan submission</td><td>NLA on receipt</td></tr>
+      <tr><td>SIEM</td><td>Out</td><td>Syslog / CEF or forwarder agent</td><td>Continuous</td><td>SIEM</td></tr>
+    </tbody>
+  </table>
+  <caption>Nine rows for eight drawn interfaces — AD and the identity management system share a lane in the diagram because they resolve to the same security principals.</caption>
+  </div>
+</section>
+
+<section id="s07">
+  <h2><span class="num">§ 07 — Deployment</span>Physical topology, high availability and disaster recovery</h2>
+  <div class="col">
+    <p class="lede">The RFP asks for SQL Always On <em>and</em> Nutanix VM replication. Those are two different recovery points on two halves of the same system, and the failure case they create — a database that is current and application servers that are an hour stale — is the thing a DR drill has to prove is survivable. The recovery order is part of the design, not part of the runbook written afterwards.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1240 700" role="img" aria-label="Primary site with DMZ, web and application tier, data tier with a synchronous SQL Always On pair, and supporting services; replicated to a DR site by Nutanix asynchronous VM replication for application servers and asynchronous Always On for the database, with a documented recovery order.">
+        <defs>
+          <marker id="f6a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--ink-3)"/>
+          </marker>
+          <marker id="f6b" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M10,1 L1,5 L10,9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <text class="al" x="182" y="44">internet + partners :443</text>
+        <line class="ln" x1="174" y1="50" x2="174" y2="100" marker-end="url(#f6a)"/>
+        <text class="al" x="418" y="44">internal clients :443</text>
+        <line class="ln" x1="410" y1="50" x2="410" y2="100" marker-end="url(#f6a)"/>
+
+        <rect class="zone" x="32" y="56" width="728" height="584"/>
+        <text class="lb" x="44" y="70">Primary site — Nutanix cluster A</text>
+
+        <rect class="zone" x="48" y="76" width="696" height="86"/>
+        <text class="lb" x="60" y="92">DMZ</text>
+        <rect class="box" x="64" y="104" width="220" height="44"/>
+        <text class="t" x="76" y="122" font-size="12">Reverse proxy + WAF ×2</text>
+        <text class="t s" x="76" y="138">external publishing</text>
+        <rect class="box" x="300" y="104" width="220" height="44"/>
+        <text class="t" x="312" y="122" font-size="12">Load balancer / VIP</text>
+        <text class="t s" x="312" y="138">TLS 1.3 termination</text>
+        <text class="t s" x="540" y="122">MFA enforced on</text>
+        <text class="t s" x="540" y="138">external sessions</text>
+
+        <line class="ln" x1="410" y1="148" x2="410" y2="202" marker-end="url(#f6a)"/>
+        <text class="al" x="418" y="176">:443</text>
+
+        <rect class="zone" x="48" y="178" width="696" height="144"/>
+        <text class="lb" x="60" y="194">Web &amp; application tier</text>
+        <rect class="box native" x="64" y="206" width="156" height="44"/>
+        <text class="t" x="74" y="224" font-size="12">WFE-01</text><text class="t s" x="74" y="240">web front end</text>
+        <rect class="box native" x="236" y="206" width="156" height="44"/>
+        <text class="t" x="246" y="224" font-size="12">WFE-02</text><text class="t s" x="246" y="240">web front end</text>
+        <rect class="box native" x="408" y="206" width="156" height="44"/>
+        <text class="t" x="418" y="224" font-size="12">APP-01</text><text class="t s" x="418" y="240">service apps</text>
+        <rect class="box native" x="580" y="206" width="156" height="44"/>
+        <text class="t" x="590" y="224" font-size="12">APP-02</text><text class="t s" x="590" y="240">service apps</text>
+        <rect class="box native" x="64" y="262" width="156" height="44"/>
+        <text class="t" x="74" y="280" font-size="12">SRCH-01</text><text class="t s" x="74" y="296">index partition 0</text>
+        <rect class="box native" x="236" y="262" width="156" height="44"/>
+        <text class="t" x="246" y="280" font-size="12">SRCH-02</text><text class="t s" x="246" y="296">index partition 1</text>
+        <rect class="box custom" x="408" y="262" width="156" height="44"/>
+        <text class="t" x="418" y="280" font-size="12">OOS ×2</text><text class="t s" x="418" y="296">preview farm</text>
+        <rect class="box custom" x="580" y="262" width="156" height="44"/>
+        <text class="t" x="590" y="280" font-size="12">CAP ×2</text><text class="t s" x="590" y="296">OCR · migration</text>
+
+        <line class="ln" x1="410" y1="306" x2="410" y2="362" marker-end="url(#f6a)"/>
+        <text class="al" x="418" y="338">TDS 1433</text>
+
+        <rect class="zone" x="48" y="338" width="696" height="168"/>
+        <text class="lb" x="60" y="354">Data tier</text>
+        <rect class="box native" x="64" y="366" width="190" height="60"/>
+        <text class="t b" x="76" y="390">SQL-01</text>
+        <text class="t s" x="76" y="408">Always On primary</text>
+        <rect class="box native" x="314" y="366" width="190" height="60"/>
+        <text class="t b" x="326" y="390">SQL-02</text>
+        <text class="t s" x="326" y="408">synchronous secondary</text>
+        <line class="ln" x1="260" y1="396" x2="308" y2="396" marker-end="url(#f6a)" marker-start="url(#f6b)"/>
+        <text class="al" x="284" y="384" text-anchor="middle">5022</text>
+        <text class="al" x="284" y="416" text-anchor="middle">sync</text>
+        <rect class="box" x="64" y="438" width="190" height="52"/>
+        <text class="t" x="76" y="458" font-size="12">Quorum witness</text>
+        <text class="t s" x="76" y="475">file share</text>
+        <rect class="box custom" x="314" y="438" width="190" height="52"/>
+        <text class="t" x="326" y="458" font-size="12">Storage tiers</text>
+        <text class="t s" x="326" y="475">T1 SSD · T2 SAS · T3 WORM</text>
+        <text class="al" x="530" y="458">synchronous commit —</text>
+        <text class="al" x="530" y="474">no data loss on</text>
+        <text class="al" x="530" y="490">single-node failure</text>
+
+        <rect class="zone" x="48" y="522" width="696" height="88"/>
+        <text class="lb" x="60" y="538">Supporting services</text>
+        <rect class="box custom" x="64" y="550" width="156" height="44"/>
+        <text class="t" x="74" y="568" font-size="12">INT ×2</text><text class="t s" x="74" y="584">API / adapters</text>
+        <rect class="box" x="236" y="550" width="156" height="44"/>
+        <text class="t" x="246" y="568" font-size="12">K2</text><text class="t s" x="246" y="584">existing platform</text>
+        <rect class="box custom" x="408" y="550" width="156" height="44"/>
+        <text class="t" x="418" y="568" font-size="12">AD RMS ×2</text><text class="t s" x="418" y="584">IRM protection</text>
+        <rect class="box" x="580" y="550" width="156" height="44"/>
+        <text class="t" x="590" y="568" font-size="12">SMTP relay</text><text class="t s" x="590" y="584">notifications</text>
+
+        <rect class="zone" x="850" y="56" width="358" height="584"/>
+        <text class="lb" x="862" y="70">DR site — Nutanix cluster B</text>
+
+        <line class="ln dash" x1="744" y1="284" x2="860" y2="284" marker-end="url(#f6a)"/>
+        <text class="al" x="866" y="240">Nutanix async PD · RPO ≈ 1 hour</text>
+        <rect class="box" x="866" y="250" width="326" height="68"/>
+        <text class="t b" x="880" y="274">Replicated SharePoint VMs</text>
+        <text class="t s" x="880" y="292">WFE · APP · SRCH · OOS · INT</text>
+        <text class="t s" x="880" y="308">powered off until failover</text>
+
+        <line class="ln em" x1="504" y1="396" x2="860" y2="396" marker-end="url(#f6a)"/>
+        <text class="al em" x="866" y="350">Always On async · RPO ≈ seconds</text>
+        <rect class="box native" x="866" y="360" width="326" height="72"/>
+        <text class="t b" x="880" y="384">SQL-DR</text>
+        <text class="t s" x="880" y="402">asynchronous replica</text>
+        <text class="t s" x="880" y="418">readable secondary for reporting</text>
+
+        <rect class="box custom" x="866" y="470" width="326" height="130"/>
+        <text class="t b" x="880" y="494">Recovery order is the design</text>
+        <text class="t s" x="880" y="516">1 · fail the availability group over</text>
+        <text class="t s" x="880" y="534">2 · power on the replicated app VMs</text>
+        <text class="t s" x="880" y="552">3 · re-point DNS and the VIP</text>
+        <text class="t s" x="880" y="570">4 · rebuild / resume the search index</text>
+        <text class="t s" x="880" y="590">app config may be up to 1 h stale</text>
+
+        <line class="ln thin" x1="32" y1="666" x2="1208" y2="666"/>
+        <text class="al" x="32" y="686">solid = live traffic · dashed = replication · teal = the replication path with the lower recovery point</text>
+      </svg>
+    </div>
+    <figcaption><b>Fig. 6</b> The database and the application servers do not fail over at the same speed, and they must not be recovered in the wrong order — powering on hour-old application VMs against a current database is the failure mode this diagram exists to prevent. Search index state is deliberately excluded from the RPO claim: it is rebuildable, and treating it as recoverable inflates the DR estimate.</figcaption>
+  </figure>
+
+  <h3>Server bill of quantities — recommended, fully redundant</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="n">#</th><th>Role</th><th class="n">Qty</th><th class="n">vCPU</th><th class="n">RAM</th><th class="n">OS disk</th><th class="n">Data disk</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Web front end</td><td class="n">2</td><td class="n">8</td><td class="n">24 GB</td><td class="n">120 GB</td><td class="n">100 GB</td><td>Behind the VIP; hosts Distributed Cache</td></tr>
+      <tr><td class="n">2</td><td>Application server</td><td class="n">2</td><td class="n">8</td><td class="n">32 GB</td><td class="n">120 GB</td><td class="n">150 GB</td><td>MMS, Secure Store, UPA, Content Organizer, timer jobs</td></tr>
+      <tr><td class="n">3</td><td>Search server</td><td class="n">2</td><td class="n">12</td><td class="n">48 GB</td><td class="n">120 GB</td><td class="n">1.5 TB SSD</td><td>2 index partitions, each replicated. Index disk sized for the year-10 corpus, never on shared storage</td></tr>
+      <tr><td class="n">4</td><td>SQL Server — AG node</td><td class="n">2</td><td class="n">16</td><td class="n">128 GB</td><td class="n">120 GB</td><td class="n">2 TB SSD</td><td>Synchronous commit; TDE enabled. 2 TB assumes RBS (ADR-11) — without it this becomes ≈35 TB of SQL storage per node</td></tr>
+      <tr><td class="n">5</td><td>Quorum witness</td><td class="n">1</td><td class="n">2</td><td class="n">4 GB</td><td class="n">80 GB</td><td>—</td><td>File-share witness, third fault domain</td></tr>
+      <tr><td class="n">6</td><td>Office Online Server</td><td class="n">2</td><td class="n">8</td><td class="n">16 GB</td><td class="n">120 GB</td><td class="n">100 GB</td><td>Preview without download</td></tr>
+      <tr><td class="n">7</td><td>Capture / OCR / migration</td><td class="n">4 → 2</td><td class="n">8</td><td class="n">32 GB</td><td class="n">120 GB</td><td class="n">2 TB</td><td>Four during the migration window, two retained for daily scan volume. Parallelism here sets the migration elapsed time (§07)</td></tr>
+      <tr><td class="n">8</td><td>Integration / API</td><td class="n">2</td><td class="n">8</td><td class="n">16 GB</td><td class="n">120 GB</td><td class="n">100 GB</td><td>Adapters and REST middleware</td></tr>
+      <tr><td class="n">9</td><td>AD RMS</td><td class="n">2</td><td class="n">4</td><td class="n">8 GB</td><td class="n">100 GB</td><td>—</td><td>Reuse an existing cluster if one is licensed</td></tr>
+      <tr><td class="n">10</td><td>Reporting services</td><td class="n">1</td><td class="n">8</td><td class="n">24 GB</td><td class="n">120 GB</td><td class="n">200 GB</td><td>Dashboards and compliance reports</td></tr>
+      <tr><td class="n">11</td><td>Reverse proxy / WAF</td><td class="n">2</td><td class="n">4</td><td class="n">8 GB</td><td class="n">100 GB</td><td>—</td><td>DMZ; reuse existing appliances where available</td></tr>
+      <tr><td class="n">12</td><td>Build / DevOps agent</td><td class="n">1</td><td class="n">8</td><td class="n">16 GB</td><td class="n">120 GB</td><td class="n">300 GB</td><td>CI/CD, PnP provisioning, packaging</td></tr>
+      <tr><td class="n">—</td><td><b>Production subtotal</b></td><td class="n"><b>23</b></td><td class="n"><b>~202</b></td><td class="n"><b>~656 GB</b></td><td class="n">—</td><td class="n"><b>~17 TB</b></td><td>VM-attached disk only. The ~15 TB tiered BLOB store and the backup, DR and off-site copies sit outside this figure — see the storage table above. Excludes DR compute.</td></tr>
+      <tr><td class="n">13</td><td>UAT / staging farm</td><td class="n">3</td><td class="n">8</td><td class="n">24 GB</td><td class="n">120 GB</td><td class="n">500 GB</td><td>Combined roles; same topology shape, no HA</td></tr>
+      <tr><td class="n">14</td><td>Development farm</td><td class="n">2</td><td class="n">8</td><td class="n">24 GB</td><td class="n">120 GB</td><td class="n">300 GB</td><td>Single-server farm + SQL</td></tr>
+      <tr><td class="n">15</td><td>DR site</td><td class="n">~9</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Replicated copies of roles 1–3, 7, 8; plus an active SQL-DR node</td></tr>
+    </tbody>
+  </table>
+  <caption>A consolidated ten-VM alternative was on the table at the original sizing estimate. At 8 TB it is no longer recommended: co-locating search with application roles puts a 1.5 TB index on a host that is also serving requests, and a single content-database restore at this volume needs the isolation the full topology provides. If Nutanix capacity is the binding constraint, reduce the capture tier after migration rather than collapsing the farm roles.</caption>
+  </div>
+
+  <h3>Storage sizing — from the measured 8 TB</h3>
+  <p class="col">The Fund has confirmed the existing corpus at <strong>8 TB</strong>. That single number displaces every estimate in the original sizing and changes one architectural decision outright (ADR-11). Multipliers are shown explicitly so the table can be re-run once the growth rate is measured.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Element</th><th>Basis</th><th class="n">Now</th><th class="n">Year 10</th><th>Tier</th></tr></thead>
+    <tbody>
+      <tr><td>Source corpus</td><td>measured, Fund-confirmed</td><td class="n">8.0 TB</td><td class="n">17.0 TB</td><td>—</td></tr>
+      <tr><td>Version overhead</td><td>×1.6 blended — active content versions, archived content does not</td><td class="n">4.8 TB</td><td class="n">10.2 TB</td><td>T1 / T2</td></tr>
+      <tr><td>PDF/A renditions</td><td>+0.25 × base</td><td class="n">2.0 TB</td><td class="n">4.3 TB</td><td>T1 / T2</td></tr>
+      <tr><td><b>Stored content total</b></td><td>—</td><td class="n"><b>≈15 TB</b></td><td class="n"><b>≈31 TB</b></td><td>—</td></tr>
+      <tr><td>Tier 1 — active working set</td><td>≈15 % of stored</td><td class="n">2.2 TB</td><td class="n">4.7 TB</td><td>SSD</td></tr>
+      <tr><td>Tier 2 — intermediate</td><td>≈35 %</td><td class="n">5.2 TB</td><td class="n">11.0 TB</td><td>SAS</td></tr>
+      <tr><td>Tier 3 — declared / permanent</td><td>≈50 %, write-once</td><td class="n">7.4 TB</td><td class="n">15.7 TB</td><td>WORM</td></tr>
+      <tr><td>SQL databases <b>with RBS</b></td><td>metadata + pointers, 3–5 % of content</td><td class="n">0.45–0.75 TB</td><td class="n">0.9–1.6 TB</td><td>SSD</td></tr>
+      <tr><td>SQL databases <em>without</em> RBS</td><td>full BLOBs held in SQL</td><td class="n">15 TB</td><td class="n">31 TB</td><td>not recommended</td></tr>
+      <tr><td>Search index</td><td>10–25 % of extractable text</td><td class="n">0.4–1.2 TB</td><td class="n">1.0–2.5 TB</td><td>Local SSD</td></tr>
+      <tr><td>TempDB + transaction logs</td><td>sized to peak load</td><td class="n">0.6 TB</td><td class="n">1.0 TB</td><td>SSD</td></tr>
+      <tr><td>Backup repository</td><td>seed + incrementals; the WORM tier is written once and never re-backed-up</td><td class="n">≈20 TB</td><td class="n">≈40 TB</td><td>Backup</td></tr>
+      <tr><td>DR replica</td><td>1 × stored content</td><td class="n">15 TB</td><td class="n">31 TB</td><td>DR site</td></tr>
+      <tr><td>Off-site / air-gapped copy</td><td>National Archives requirement</td><td class="n">15 TB</td><td class="n">31 TB</td><td>Off-site</td></tr>
+      <tr><td><b>Total raw provisioned across the estate</b></td><td>—</td><td class="n"><b>≈65 TB</b></td><td class="n"><b>≈140 TB</b></td><td>—</td></tr>
+    </tbody>
+  </table>
+  <caption>The year-10 projection assumes 1 TB per year of new base content — an assumption, not a measurement, and now the only number in this table still waiting to be replaced (§11).</caption>
+  </div>
+
+  <div class="note warn">
+    <b>8 TB and 70,000 documents do not describe the same thing.</b> Eight terabytes across seventy thousand items is an average of <b>120 MB per document</b> — that is not office content, it is audio-visual and design material. The Fund's own records register anticipates exactly that: Corporate Communication holds visual and audio production material and artwork, and the National Archives retention template carries a dedicated audio-visual class for tapes, recordings, photographs and films. So either the 70,000 counts record files rather than individual documents, or the corpus is dominated by media assets. The answer changes migration duration by a factor of five and decides whether large media belongs inside SharePoint at all — see §11, question 1.
+  </div>
+
+  <h3>Content database layout at this volume</h3>
+  <p class="col">SharePoint's supported content-database ceilings are what force the partitioning, and the two halves of this system fall under different tiers of that guidance.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Content</th><th class="n">Volume</th><th>Ceiling that applies</th><th class="n">Databases</th></tr></thead>
+    <tbody>
+      <tr><td>Division workspaces — active and intermediate</td><td class="n">≈7.4 TB</td><td>The 200 GB general recommendation. This content is edited and carries workflows, alerts and item-level security, so the larger ceilings do not apply to it.</td><td class="n">≈38</td></tr>
+      <tr><td>Archive Centre — declared records</td><td class="n">≈7.4 TB</td><td>Qualifies for the document-archive exception: a Records Center site, read-mostly, no workflows or alerts, minimal modification. Databases well beyond 4 TB are supported under those conditions.</td><td class="n">2–4</td></tr>
+      <tr><td>Service applications</td><td class="n">&lt; 1 TB</td><td>Search administration, crawl, links, managed metadata, Secure Store, user profiles, app management</td><td class="n">≈10</td></tr>
+    </tbody>
+  </table>
+  <caption>Roughly 40 content databases in total. Note that Remote BLOB Storage does <em>not</em> raise these ceilings — externalised BLOBs still count toward the database size boundary. RBS changes the SQL footprint and the backup profile, not the partition count.</caption>
+  </div>
+
+  <h3>Migration duration</h3>
+  <p class="col">Both readings of the 8 TB are costed here, because the difference between them is the difference between a two-week task and a two-month one.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Factor</th><th>If 8 TB is ≈70,000 items (≈120 MB average)</th><th>If 8 TB is ≈4 M items (≈2 MB average)</th></tr></thead>
+    <tbody>
+      <tr><td>Bounded by</td><td>Disk and network throughput</td><td>Per-item API rate</td></tr>
+      <tr><td>Throughput per migration server</td><td class="n">60–120 GB / hour</td><td class="n">5,000–15,000 items / hour</td></tr>
+      <tr><td>Pure transfer time, 4 servers</td><td class="n">25–35 hours</td><td class="n">70–200 hours</td></tr>
+      <tr><td>OCR pass</td><td>Minor — media carries no text layer</td><td>Dominant — the single largest work item</td></tr>
+      <tr><td>Full search crawl after load</td><td class="n">under 1 hour</td><td class="n">20–30 hours</td></tr>
+      <tr><td>Realistic elapsed, with verification and business-hours windows</td><td class="n">1–2 weeks</td><td class="n">6–10 weeks</td></tr>
+      <tr><td>Migration servers required</td><td class="n">2–4</td><td class="n">4–6</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <b>The DR replica has to be seeded offline.</b> Eight terabytes over a 100 Mbps inter-site link at 50 % utilisation takes about 15 days; over 1 Gbps, about 1.6 days. Seed the DR site from a backup restore or a physically transported copy, then let replication carry only the delta — which at an assumed 1 % weekly change rate is roughly 11 GB a day and needs a few Mbps sustained.
+  </div>
+
+  <h3>Network and firewall</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Flow</th><th class="n">Port</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Client → VIP / WAF</td><td class="n">443</td><td>TLS 1.2 minimum, 1.3 preferred; 80 for redirect only</td></tr>
+      <tr><td>WFE ↔ application servers</td><td class="n">32843–32846, 808</td><td>Service application and topology channels</td></tr>
+      <tr><td>Distributed Cache cluster</td><td class="n">22233–22236</td><td>Between cache hosts only</td></tr>
+      <tr><td>Search intra-farm</td><td class="n">16500–16519</td><td>Index and query components</td></tr>
+      <tr><td>Farm → SQL</td><td class="n">1433 (fixed)</td><td>Use a fixed port; disable SQL Browser (1434/UDP)</td></tr>
+      <tr><td>SQL ↔ SQL (AG endpoints)</td><td class="n">5022</td><td>Sync within site, async to DR</td></tr>
+      <tr><td>Farm → Active Directory</td><td class="n">88, 389, 636, 445, 3268/3269</td><td>Kerberos, LDAP, LDAPS, SMB, global catalogue</td></tr>
+      <tr><td>Farm ↔ Office Online Server</td><td class="n">443 (809/810 internal)</td><td>WOPI discovery and rendering</td></tr>
+      <tr><td>Farm ↔ AD RMS</td><td class="n">443</td><td>Licensing and certification pipelines</td></tr>
+      <tr><td>Farm → SMTP relay</td><td class="n">25 or 587</td><td>Outbound notifications; inbound mail for the drop library</td></tr>
+      <tr><td>Farm → identity provider</td><td class="n">443</td><td>OIDC / SAML metadata and token endpoints</td></tr>
+      <tr><td>Integration → Oracle ERP / K2</td><td class="n">443</td><td>Mutual TLS where the endpoint supports it</td></tr>
+      <tr><td>Migration → file servers</td><td class="n">445</td><td>Temporary rule, removed at cut-over</td></tr>
+      <tr><td>All servers → SIEM</td><td class="n">514 / 6514</td><td>Syslog or CEF; TLS on 6514 preferred</td></tr>
+      <tr><td>All servers → patching / monitoring</td><td class="n">8530/8531, agent ports</td><td>WSUS and the monitoring platform</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">§ 08 — Security &amp; Compliance</span>Where each control actually lives</h2>
+  <div class="col">
+    <p class="lede">A compliance matrix is only useful if every row names a component someone can test. These do.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Requirement</th><th>Control</th><th>Implemented in</th><th>Evidence at UAT</th></tr></thead>
+    <tbody>
+      <tr><td>Role-based access control</td><td>AD security groups mapped to SharePoint permission levels; membership from the delegation-of-authority matrix</td><td>AD + division site permissions</td><td>Access review export per division</td></tr>
+      <tr><td>Enterprise authentication / SSO</td><td>Kerberos for internal, OIDC or SAML for federated; MFA on external access</td><td>Web application zones + identity provider</td><td>Sign-in trace, MFA challenge on the external zone</td></tr>
+      <tr><td>Encryption in transit</td><td>TLS 1.2+ end to end, including farm-to-SQL and farm-to-OOS</td><td>Certificates, IPsec or Force Encryption on SQL</td><td>Packet capture / configuration report</td></tr>
+      <tr><td>Encryption at rest</td><td>SQL TDE on all content and service databases; volume encryption on BLOB tiers</td><td>SQL Server + storage layer</td><td>TDE state query; volume encryption status</td></tr>
+      <tr><td>Persistent document protection</td><td>IRM through AD RMS on Confidential and Secret libraries</td><td>Library IRM settings</td><td>Download a protected file, open off-network, confirm restriction</td></tr>
+      <tr><td>Data loss prevention</td><td>SharePoint DLP policies over sensitive information types, tuned for Emirates ID, IBAN and pension reference formats</td><td>DLP policy in the eDiscovery / compliance centre</td><td>Seeded test document triggers policy tip and incident</td></tr>
+      <tr><td>Audit trail — view, edit, delete</td><td>Site collection auditing enabled for all event types; events shipped to a warehouse before trimming</td><td>Audit pipeline → audit warehouse</td><td>Reconstruct a document's full history for an arbitrary item</td></tr>
+      <tr><td>SIEM integration</td><td>Syslog / CEF forwarding of audit, farm and OS events; correlation rules for bulk read and permission escalation</td><td>Forwarder + SIEM content pack</td><td>Trigger a bulk-read pattern, confirm the alert fires</td></tr>
+      <tr><td>Information deletion (ISO 27001:2022 A.8.10)</td><td>Disposition destroys content and the BLOB, and writes a certificate; the audit record survives the document</td><td>Disposition workflow</td><td>Destroy a test record; audit entry remains, content is unrecoverable</td></tr>
+      <tr><td>Data masking (A.8.11)</td><td>Non-production environments receive obfuscated metadata and sample content only</td><td>Refresh pipeline</td><td>Inspect UAT for real member data — there must be none</td></tr>
+      <tr><td>Configuration management (A.8.9)</td><td>Farm configuration expressed as versioned PnP / PowerShell, applied through the release pipeline</td><td>Git + CI/CD</td><td>Rebuild UAT from source and diff against production</td></tr>
+      <tr><td>Secure coding (A.8.28)</td><td>Static analysis and dependency scanning in the pipeline; peer review mandatory</td><td>Build pipeline gates</td><td>Pipeline run showing a blocked build</td></tr>
+      <tr><td>ICT readiness for continuity (A.5.30)</td><td>DR drill against documented recovery order; RPO/RTO measured, not asserted</td><td>DR runbook</td><td>Timed drill report signed by both parties</td></tr>
+      <tr><td>Threat intelligence (A.5.7)</td><td>Farm and OS patch cadence tied to advisory feeds; SharePoint-aware antivirus with current definitions</td><td>Patch process + AV</td><td>Patch compliance report</td></tr>
+      <tr><td>Monitoring activities (A.8.16)</td><td>Availability, latency and failed-authentication monitoring with alert thresholds</td><td>Monitoring platform</td><td>Alert catalogue with owners</td></tr>
+      <tr><td>Physical repository conditions</td><td>Paper and hybrid series remain in scope of ISO 11799 storage conditions; the system records location and vitality but does not replace the physical control</td><td>Metadata: media form, storage place</td><td>Hybrid series report showing physical locations</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note">
+    <b>One boundary worth stating explicitly in the proposal.</b> Data masking, DLP tuning and SIEM correlation rules depend on sensitive-information patterns that only the Fund can define — Emirates ID formats, member reference schemes, salary field names. The vendor builds the mechanism; the Fund supplies the patterns. If that hand-off is not scheduled early it lands in the last week before UAT, where it always slips.
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">§ 09 — Prerequisites</span>What must exist before build day one</h2>
+  <div class="col">
+    <p class="lede">Grouped by owner as well as by type, because roughly a third of these are the Fund's to provide and a delivery plan that assumes otherwise will slip in week two. The last group is the one that decides whether this project finishes on time.</p>
+  </div>
+
+  <div class="grid2">
+  <div>
+  <h4>A · Licences &amp; software</h4>
+  <ul class="chk">
+    <li><div>SharePoint Server Subscription Edition licences — server plus CALs for the full user population<span class="who">Fund</span></div></li>
+    <li><div>SQL Server Enterprise Edition (Always On availability groups and TDE both require Enterprise)<span class="who">Fund</span></div></li>
+    <li><div>Windows Server 2019 or later per the current SPSE support matrix, plus CALs<span class="who">Fund</span></div></li>
+    <li><div>Office Online Server licensing entitlement (covered by the SharePoint agreement — confirm before assuming)<span class="who">Fund</span></div></li>
+    <li><div>SharePoint Arabic language pack, matching build<span class="who">Vendor</span></div></li>
+    <li><div>OCR / PDA-A rendition engine — licence model and page volume agreed<span class="who">Vendor</span></div></li>
+    <li><div>Migration tooling licence, sized for the source repositories<span class="who">Vendor</span></div></li>
+    <li><div>K2 licensing headroom for the new process definitions, or an alternative workflow engine priced<span class="who">Joint</span></div></li>
+    <li><div>WORM-capable storage or an RBS provider supporting immutability<span class="who">Joint</span></div></li>
+    <li><div>SharePoint-aware antivirus (VSAPI) licences<span class="who">Fund</span></div></li>
+  </ul>
+
+  <h4>B · Platform &amp; compute</h4>
+  <ul class="chk">
+    <li><div>Nutanix capacity confirmed for ~21 production VMs plus non-production, with headroom for N+1 host failure<span class="who">Fund</span></div></li>
+    <li><div>DR cluster with protection domains configured and a tested replication schedule<span class="who">Fund</span></div></li>
+    <li><div>VM templates hardened to the Fund's baseline, joined to the domain, patched<span class="who">Fund</span></div></li>
+    <li><div>Time synchronisation across all farm members from a single authoritative source<span class="who">Fund</span></div></li>
+    <li><div>MinRole assignment decided per server before installation — changing it later means a rebuild<span class="who">Vendor</span></div></li>
+  </ul>
+
+  <h4>C · Storage</h4>
+  <ul class="chk">
+    <li><div>Tier 1 SSD, Tier 2 SAS and Tier 3 WORM presented as separate datastores or LUNs<span class="who">Fund</span></div></li>
+    <li><div>Search index on local SSD — never on shared or replicated storage<span class="who">Fund</span></div></li>
+    <li><div>Backup repository sized per §07, with an off-site or air-gapped copy per the National Archives guidance<span class="who">Fund</span></div></li>
+    <li><div>Immutability retention period on the WORM tier agreed and set to match the longest archive retention in the register<span class="who">Joint</span></div></li>
+  </ul>
+
+  <h4>D · Directory &amp; accounts</h4>
+  <ul class="chk">
+    <li><div>Dedicated OU for farm servers and service accounts, with a scoped group policy<span class="who">Fund</span></div></li>
+    <li><div>Service accounts, non-expiring or managed: setup, farm, web application pool, service application pool, search crawl, user profile sync, super-user, super-reader, integration, migration, reporting<span class="who">Fund</span></div></li>
+    <li><div>Setup account: local administrator on farm servers; <code>dbcreator</code> and <code>securityadmin</code> on SQL<span class="who">Fund</span></div></li>
+    <li><div>SPNs registered for the farm URLs and delegation configured for Kerberos<span class="who">Fund</span></div></li>
+    <li><div>AD security groups defined per division and per role, from the delegation-of-authority matrix<span class="who">Joint</span></div></li>
+    <li><div>Identity provider metadata, client ID and secret if OIDC or SAML sign-in is used<span class="who">Fund</span></div></li>
+  </ul>
+  </div>
+
+  <div>
+  <h4>E · Network, DNS &amp; certificates</h4>
+  <ul class="chk">
+    <li><div>DNS records for the internal portal, archive, external portal, Office Online Server and Central Administration<span class="who">Fund</span></div></li>
+    <li><div>Public certificate with the required subject alternative names for external publishing; internal CA certificate for intra-farm traffic; exportable private keys<span class="who">Fund</span></div></li>
+    <li><div>Firewall rules per the §07 table, opened between the correct security zones<span class="who">Fund</span></div></li>
+    <li><div>Load balancer VIP with health probes on a real SharePoint endpoint, not just a TCP check<span class="who">Fund</span></div></li>
+    <li><div>Reverse proxy configured to preserve the original host header — the single most common cause of broken links<span class="who">Fund</span></div></li>
+    <li><div>SMTP relay permitting the farm servers to send, and an inbound mailbox for the drop-off library<span class="who">Fund</span></div></li>
+  </ul>
+
+  <h4>F · SQL Server</h4>
+  <ul class="chk">
+    <li><div>Instance collation <code>Latin1_General_CI_AS_KS_WS</code> — SharePoint will not install on anything else<span class="who">Vendor</span></div></li>
+    <li><div><code>MAXDOP</code> set to 1 at the instance level<span class="who">Vendor</span></div></li>
+    <li><div>Instant file initialisation and Lock Pages In Memory granted to the SQL service account<span class="who">Fund</span></div></li>
+    <li><div>Windows Server Failover Cluster with a witness in a third fault domain<span class="who">Fund</span></div></li>
+    <li><div>SQL alias configured on every farm server so the instance can move without touching SharePoint<span class="who">Vendor</span></div></li>
+    <li><div>TDE certificates created, backed up and escrowed — a lost TDE certificate is unrecoverable data<span class="who">Joint</span></div></li>
+    <li><div>Antivirus exclusions for SQL data, log and backup paths<span class="who">Fund</span></div></li>
+  </ul>
+
+  <h4>G · SharePoint farm</h4>
+  <ul class="chk">
+    <li><div>Prerequisite installer run offline against a staged package set (no internet from the farm)<span class="who">Vendor</span></div></li>
+    <li><div>A Windows-authentication zone on each web application for the search crawler — the crawler cannot authenticate against an OIDC-only zone<span class="who">Vendor</span></div></li>
+    <li><div>Loopback check handled: register the host names rather than disabling the check outright<span class="who">Vendor</span></div></li>
+    <li><div>Antivirus exclusions for the SharePoint hive, search index and IIS temporary files<span class="who">Fund</span></div></li>
+    <li><div>Arabic word-breaker and stemmer verified against sample content before content is loaded<span class="who">Vendor</span></div></li>
+    <li><div>Office Online Server on dedicated servers — SharePoint must not be installed alongside it<span class="who">Vendor</span></div></li>
+    <li><div>AD RMS service connection point registered in the directory<span class="who">Fund</span></div></li>
+  </ul>
+
+  <h4>H · Integration</h4>
+  <ul class="chk">
+    <li><div>Endpoint URLs, credentials and non-production copies for Oracle ERP, K2 and each existing SharePoint farm<span class="who">Fund</span></div></li>
+    <li><div>API documentation and rate limits for each interface<span class="who">Fund</span></div></li>
+    <li><div>Read access to the source file shares for the migration account<span class="who">Fund</span></div></li>
+    <li><div>Named technical contact and a test window per source system<span class="who">Fund</span></div></li>
+    <li><div>National Archives transfer template and metadata schema in its current version<span class="who">Fund</span></div></li>
+    <li><div>SIEM ingestion endpoint, log format and a test event confirmed end to end<span class="who">Fund</span></div></li>
+  </ul>
+  </div>
+  </div>
+
+  <h4>I · Data &amp; migration</h4>
+  <div class="col">
+  <ul class="chk">
+    <li><div>Source inventory per repository: item count, total size, <b>file-size histogram</b>, file-type spread and last-modified profile. The 8 TB total is confirmed; its shape is not, and the shape is what sets the migration schedule<span class="who">Joint · blocks migration planning</span></div></li>
+    <li><div>Confirmation of what the 70,000 figure covers, and an explicit decision on the pre-2010 hardcopy correspondence backlog: in scope for scanning, or out<span class="who">Fund</span></div></li>
+    <li><div>Metadata mapping from each source to the target schema, with a named owner per source<span class="who">Joint</span></div></li>
+    <li><div>Permission mapping — source ACLs to target AD groups, including orphaned and disabled accounts<span class="who">Joint</span></div></li>
+    <li><div>Data quality pass: duplicates, corrupt files, zero-byte files, paths exceeding limits, unsupported types<span class="who">Vendor</span></div></li>
+    <li><div>Reconciliation method and tolerance agreed <em>before</em> migration, not after — count, checksum and sample-based content verification<span class="who">Joint</span></div></li>
+    <li><div>Cut-over plan per source, with the source set to read-only at cut-over and a rollback position<span class="who">Joint</span></div></li>
+  </ul>
+  </div>
+
+  <h4>J · Governance — the critical path</h4>
+  <div class="col">
+  <p>None of these are technical, and every one of them blocks configuration. They are listed last because they are almost always started last, which is exactly the problem.</p>
+  <ul class="chk">
+    <li><div><b>Approved records register</b> — the ~464 series frozen as a build baseline, each with sector, division, series code, metadata set, confidentiality, active retention, archive retention and final disposition. Configuration cannot begin without it<span class="who">Fund · blocks build</span></div></li>
+    <li><div><b>Approved business classification scheme</b> — Function → Activity → Process, exhaustive and mutually exclusive, bilingual labels agreed<span class="who">Fund · blocks term store</span></div></li>
+    <li><div><b>File Retention Plan submitted to and approved by the National Archives</b>, on the prescribed template<span class="who">Fund · blocks automated disposition</span></div></li>
+    <li><div><b>Confidentiality level assigned to every series</b> by the responsible Information Owner<span class="who">Fund · blocks permissions</span></div></li>
+    <li><div><b>Delegation-of-authority matrix</b> mapped to permission levels and approval routes<span class="who">Fund · blocks workflow</span></div></li>
+    <li><div><b>Coding authority named</b> — which unit owns the document code sequence and issues new codes<span class="who">Fund</span></div></li>
+    <li><div><b>Disposition committee constituted</b>, with a destruction certificate template and a minute reference scheme<span class="who">Fund</span></div></li>
+    <li><div><b>Legal hold policy</b> — who may apply one, on what authority, and how release is evidenced<span class="who">Fund</span></div></li>
+    <li><div><b>Sensitive information patterns</b> for DLP: Emirates ID, IBAN, member reference and salary field formats<span class="who">Fund · blocks DLP</span></div></li>
+    <li><div><b>Business requirements sign-off</b> — the RFP states the final requirement list is confirmed before implementation; that document is a prerequisite, not a deliverable of the build phase<span class="who">Joint</span></div></li>
+  </ul>
+  </div>
+
+  <h4>K · Environments &amp; DevOps</h4>
+  <div class="col">
+  <ul class="chk">
+    <li><div>Three environments — development, UAT/staging, production — plus DR; UAT must mirror production's topology shape<span class="who">Fund</span></div></li>
+    <li><div>Source control repository with branching policy, and a build/release pipeline reachable from the farm network<span class="who">Joint</span></div></li>
+    <li><div>Refresh procedure to seed UAT from production with masked data<span class="who">Vendor</span></div></li>
+    <li><div>Coding standards, naming conventions and code-handover format agreed against the Fund's standards<span class="who">Joint</span></div></li>
+  </ul>
+  </div>
+
+  <h4>L · Operations</h4>
+  <div class="col">
+  <ul class="chk">
+    <li><div>Backup schedules and tested restore procedures per tier, including a single-item restore path<span class="who">Fund</span></div></li>
+    <li><div>Monitoring thresholds and alert routing agreed with named owners<span class="who">Joint</span></div></li>
+    <li><div>Patching windows for Windows, SQL and SharePoint that respect the SLA response times<span class="who">Fund</span></div></li>
+    <li><div>Support model, escalation matrix and the SLA priority definitions confirmed against the RFP's response and resolution tables<span class="who">Vendor</span></div></li>
+    <li><div>DR drill scheduled within the acceptance window, with measured RPO/RTO as the exit evidence<span class="who">Joint</span></div></li>
+  </ul>
+  </div>
+</section>
+
+<section id="s10">
+  <h2><span class="num">§ 10 — Decisions</span>The calls that shape everything else</h2>
+  <div class="col">
+    <p class="lede">Eleven decisions with real alternatives. Each is recorded with what it costs, so the design review can overturn one without unpicking the rest. The last of them was decided the other way until the Fund confirmed the corpus at 8 TB.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-1 · Retention runs on on-premises primitives</h3>
+    <span class="tag">Alternative rejected: cloud retention labels</span>
+    <p>Microsoft Purview retention labels, auto-labelling and sensitivity labels are cloud services. On a fully on-premises farm they do not exist. Retention is therefore built on content-type information management policies, the Content Organizer and a custom disposition workflow. <b>Cost:</b> policy authoring is per content type rather than per label, and there is no tenant-wide policy view — the records officer console (§02) exists to fill that gap.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-2 · OCR and PDF/A rendition are a bought component</h3>
+    <span class="tag">Not optional — an acceptance criterion depends on it</span>
+    <p>SharePoint Server performs no optical character recognition. Without a rendition engine, scanned documents are indexed by filename and metadata only, and "full-text search" fails at UAT. PDF/A is separately mandated by the National Archives guidance for long-term preservation. <b>Cost:</b> a licence line, a processing tier sized for the migration burst, and reprocessing time for the backlog.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-3 · K2 is the approval engine; SharePoint owns retention automation</h3>
+    <span class="tag">Alternative rejected: SharePoint 2013 workflows</span>
+    <p>K2 is already deployed and already named in the integration matrix. Legacy SharePoint workflow is on a deprecation path and should not carry new business process. Retention and disposition automation stays in native timer jobs and event receivers, because it must run whether or not the workflow platform is available. <b>Cost:</b> a licensing check on K2 process count, and a clear boundary — K2 owns process state, the DMS owns the outcome.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-4 · Two replication mechanisms, one documented recovery order</h3>
+    <span class="tag">Consequence of the RFP requiring both</span>
+    <p>SQL Always On asynchronous replication gives the database a recovery point measured in seconds. Nutanix protection-domain replication gives the application VMs a recovery point measured in tens of minutes. Recovering them in the wrong order brings up stale application configuration against a current database. The order in Fig. 6 is part of the design and is what the DR drill tests. <b>Cost:</b> a slightly more complex runbook, in exchange for a database RPO an order of magnitude better than VM replication alone would give.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-5 · Immutability comes from the storage layer</h3>
+    <span class="tag">Alternative rejected: application-enforced immutability</span>
+    <p>SharePoint's record declaration prevents edit and delete <em>through the application</em>. The National Archives guidance calls for a non-rewritable medium, which is a stronger claim: it must hold against a farm administrator. That means WORM-capable storage or an RBS provider with immutability, with a retention lock at least as long as the longest archive retention in the register. <b>Cost:</b> storage procurement, and the discipline that anything written to Tier 3 genuinely cannot be corrected — so the classification gate before declaration has to be right.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-6 · Content databases are partitioned by sector and lifecycle tier</h3>
+    <span class="tag">Alternative rejected: one large content database</span>
+    <p>Keeping each database under the ~200 GB supported comfort limit is the immediate reason. The structural reason matters more: an archive database on its own storage tier can be moved to immutable media, backed up on its own schedule and restored without touching live division content. At 8 TB the split also unlocks a real concession — the Archive Centre is a read-mostly Records Center and therefore qualifies for the document-archive exception, so it can run a handful of very large databases while the division workspaces stay at 200 GB. <b>Cost:</b> roughly forty content databases to operate rather than a handful.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-7 · Classification is rules-first, model-second</h3>
+    <span class="tag">RFP lists AI-based recognition as "good to have"</span>
+    <p>The Fund's own classification scheme is deterministic — organisation unit, document type and process largely determine the destination. A rule set derived from the register will classify the majority correctly and is auditable, which matters in a regulated archive. A statistical model is layered on afterwards for the residue, always with a confidence threshold below which a human decides. <b>Cost:</b> rule maintenance as the scheme evolves — mitigated by keeping rules as data, not code.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-8 · Oracle stays authoritative; the DMS links rather than copies</h3>
+    <span class="tag">Alternative rejected: replicating ERP fields into metadata</span>
+    <p>Copying contract values, vendor names or PO status into document metadata creates a second version of the truth that drifts silently and that nobody is accountable for reconciling. The DMS stores the ERP reference and resolves the current values on demand. <b>Cost:</b> the ERP must be reachable for those fields to display, so the interface needs a cached-value fallback and a clear stale indicator.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-9 · Every web application carries a Windows-authentication zone</h3>
+    <span class="tag">Prerequisite disguised as a detail</span>
+    <p>If federated sign-in is the default zone, the search crawler cannot authenticate and the index stays empty — a failure that surfaces late and looks like a search problem rather than an authentication one. Each web application is extended with a Windows-authentication zone reserved for the crawl account. <b>Cost:</b> one extra zone and its DNS entry per web application.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-10 · Libraries group series that share a metadata set</h3>
+    <span class="tag">Alternative rejected: one library per record series</span>
+    <p>464 libraries would be unnavigable, would multiply configuration by an order of magnitude and would push several sites past comfortable list counts. Series sharing a metadata set and retention rule sit together, distinguished by the record series field, which is also what search refines on. <b>Cost:</b> the file plan and the folder structure stop being the same thing — which is correct under ISO 15489, but needs to be taught in the training material.</p>
+  </div>
+
+  <div class="adr">
+    <h3>ADR-11 · Remote BLOB Storage is mandatory, not an optimisation</h3>
+    <span class="tag">Reversed by the measured 8 TB volume</span>
+    <p>At the originally estimated ~100 GB, leaving BLOBs inside SQL Server was the simpler choice and RBS was optional. At 8 TB it is not: every full backup, every restore, every DR seed and every TDE operation would drag fifteen terabytes of binary content through SQL. Externalising BLOBs collapses the SQL footprint to metadata and pointers — roughly 0.5 TB now, 1.6 TB at year ten — so the database becomes something that can be backed up nightly and failed over in minutes, while the content itself is protected by storage-array snapshots and replication and can be tiered onto WORM media.</p>
+    <p><b>Cost and caveats.</b> A supported RBS provider is a licence line. Backup and restore become a two-part operation that must stay consistent — an orphaned BLOB store and a restored database are not a working system, so the backup tooling has to understand both. And RBS does <em>not</em> raise the content-database size ceilings: externalised BLOBs still count toward them, so the ~40-database partitioning in ADR-6 stands either way.</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">§ 11 — Open Points</span>Assumptions carried, and what would change if they are wrong</h2>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Assumption</th><th>Used for</th><th>If wrong</th><th>Resolve by</th></tr></thead>
+    <tbody>
+      <tr><td>Growth of ≈1 TB of new base content per year</td><td>Year-10 storage projection, backup and DR capacity</td><td>The estate figure moves proportionally — at 2 TB a year the ten-year raw requirement approaches 240 TB</td><td>Twelve months of measured growth, or the last three years of file-server capacity purchases</td></tr>
+      <tr><td>The 8 TB is the in-scope corpus, not the whole file estate</td><td>All sizing in §07</td><td>If it is the whole estate, scoping reduces it; if a repository was excluded from the count, every figure rises</td><td>Repository-by-repository inventory with a measured size per source</td></tr>
+      <tr><td>~600 named users, ~120 concurrent</td><td>Web and application tier sizing, CAL count</td><td>Front-end count and licence quantity change</td><td>HR headcount plus expected external-user model</td></tr>
+      <tr><td>The 70,000-document figure and the 8 TB describe the same scope</td><td>Migration duration, OCR volume, search crawl time</td><td>Both branches are costed in §07 — picking the wrong one is a five-fold schedule error, not a rounding error</td><td>Item count and a file-size histogram per repository</td></tr>
+      <tr><td>Large media is stored inside SharePoint rather than referenced from it</td><td>Content database count, upload limits, RBS design</td><td>If audio-visual masters are referenced instead, the SharePoint footprint drops sharply and a separate asset store enters the BOQ</td><td>Answer to question 1 below</td></tr>
+      <tr><td>K2 is licensed for additional process definitions</td><td>ADR-3 — workflow engine choice</td><td>An alternative engine must be priced, or approvals fall back to native functionality with reduced capability</td><td>Licence review with the Fund</td></tr>
+      <tr><td>AD RMS is already deployed or licensed</td><td>IRM for Confidential and Secret</td><td>Two more servers and a deployment work package, or persistent protection is dropped from scope</td><td>Infrastructure discovery</td></tr>
+      <tr><td>The existing SharePoint farms are decommissioned after migration</td><td>Federated search design, licence planning</td><td>If they remain live, federation becomes permanent and dual-maintenance applies</td><td>Application roadmap review</td></tr>
+      <tr><td>Active Directory remains authoritative for identity, with the IDM projecting groups into it</td><td>Permission model, sync design</td><td>If the IDM is authoritative, the sync direction and the source of truth for group membership both invert</td><td>Identity architecture session</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Questions for the clarification round</h3>
+  <ol class="col">
+    <li><strong>How many items make up the 8 TB, and what is their size distribution?</strong> At a 120 MB average these are media and design files; at a 2 MB average they are documents. Migration duration, OCR volume, search crawl time, the content-database count and the question of whether audio-visual masters belong inside SharePoint at all all follow from this one measurement. An item count and a file-size histogram per source repository settles it, and it is the first thing to ask for.</li>
+    <li><strong>What are the target RPO and RTO?</strong> The RFP requires them to be achieved in a drill but does not state them. They determine whether the DR design in §07 is sufficient or over-engineered.</li>
+    <li><strong>Is the National Archives interface in or out?</strong> The RFP lists external integration as optional, but transfer of permanently valuable records is a statutory obligation. Building the export packager later costs more than building it now.</li>
+    <li><strong>Which existing correspondence systems remain in service?</strong> The records register points at several — a shared file system, OneDrive, an intranet, a correspondence system, and pre-2010 hardcopy held in an office archive. Each is a separate migration decision.</li>
+    <li><strong>How many scan stations, and where?</strong> Capture tier sizing and the batch-scanning workflow depend on it.</li>
+    <li><strong>Does "external stakeholder sharing" mean authenticated guest access, or expiring links only?</strong> The two have very different security architectures.</li>
+    <li><strong>Is the records register at reference 3 the approved baseline, or a working draft?</strong> This is the single most schedule-critical answer in the list.</li>
+  </ol>
+
+  <hr>
+
+  <div class="col">
+    <p style="font-size:14px;color:var(--ink-3)">Prepared as a design-review draft against the RFP <em>DMS / Archiving System — Scope of Services v2.2</em> and its nine appended references. Figures, sizing and BOQ quantities are indicative until the assumptions in §11 are replaced with measured values. Client identity is carried as "XYZ (the Fund)" per the anonymisation used in the source RFP; URLs, domains and server names shown are placeholders.</p>
+  </div>
+</section>
+
+</div>
+
+</body></html>
